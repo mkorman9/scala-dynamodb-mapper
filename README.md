@@ -67,7 +67,7 @@ Create mapping for data model:
 object Cats extends DynamoTable {
   override val name = "Cat"
   override val hashKey = DynamoString("roleName")
-  override val sortKey = DynamoString("name")
+  override val sortKey = DynamoString("name")       // You can simply omit sortKey if your table doesn't contain one
   override val attr = List(
     DynamoInt("mousesConsumed", required = false),
     DynamoDateTime("birthDate"),
