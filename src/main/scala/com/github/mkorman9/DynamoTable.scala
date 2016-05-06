@@ -2,7 +2,7 @@ package com.github.mkorman9
 
 import awscala.dynamodbv2.DynamoDB
 import com.amazonaws.services.dynamodbv2.model.Condition
-import ovh.mihau.dynamodb.exception.AttributeNotFoundException
+import com.github.mkorman9.exception.AttributeNotFoundException
 
 import scala.reflect.ClassTag
 
