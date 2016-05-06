@@ -42,7 +42,7 @@ libraryDependencies += "com.github.mkorman9" % "scala-dynamodb-mapper" % "0.1"
 
 At first you must establish connection with Amazon DynamoDB service:
 
-```
+```scala
 import com.github.mkorman9._
 import awscala.dynamodbv2._
 
