@@ -6,13 +6,13 @@ import com.github.mkorman9.exception.AttributeNotFoundException
 
 import scala.reflect.ClassTag
 
-abstract class DynamoTable {
+abstract class DynamoTable[C] {
   val name: String
   val hashKey: DynamoAttribute[_]
   val sortKey: DynamoAttribute[_] = DynamoEmptyAttribute
   val attr: Seq[DynamoAttribute[_]]
 
-  def put(value: Any)(implicit dynamoDB: DynamoDB): Unit = {
+  def put(value: C)(implicit dynamoDB: DynamoDB): Unit = {
     def findValueFor(name: String) = {
       val f = value.getClass.getDeclaredField(name)
       f.setAccessible(true)
@@ -38,7 +38,7 @@ abstract class DynamoTable {
     }
   }
 
-  def query[C <: AnyRef](keyConditions: Seq[(String, Condition)])(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
+  def query(keyConditions: Seq[(String, Condition)])(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     def createCaseClass(vals: Map[String, (Option[Any], Boolean)]) = {
       val ctor = c.runtimeClass.getConstructors.head
       val args = c.runtimeClass.getDeclaredFields.map(f => {
@@ -63,7 +63,7 @@ abstract class DynamoTable {
       keys ++ (attr map { v =>
         val value = v.retrieveValueFromItem(item)
         if (value.isDefined)
-          v.name ->(Some(v.convertToRealValue(value.get)), v.requiredValue)
+          v.name ->(Some(v.convertToRealValue(value .get)), v.requiredValue)
         else {
           if (v.requiredValue) {
             val name = v.name

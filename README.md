@@ -64,7 +64,7 @@ Lets assume that the roleName attribute is the hash key and the name is the sort
 Create mapping for data model:
 
 ```scala
-object Cats extends DynamoTable {
+object Cats extends DynamoTable[Cat] {
   override val name = "Cat"
   override val hashKey = DynamoString("roleName")
   override val sortKey = DynamoString("name")       // You can simply omit sortKey if your table doesn't contain one
@@ -86,6 +86,6 @@ Cats.put(Cat("Patt", "Hunter", Some(121), new DateTime().minusYears(7), List("br
 And retrieve all the cats with role 'Hunter'
 
 ```scala
-val hunters: Seq[Cat] = Cats.query[Cat](Seq("roleName" -> cond.eq("Hunter")))
+val hunters: Seq[Cat] = Cats.query(Seq("roleName" -> cond.eq("Hunter")))
 ```
 
