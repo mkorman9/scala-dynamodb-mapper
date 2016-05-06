@@ -51,7 +51,7 @@ implicit val dynamoDB = DynamoDB(YOUR_AWS_KEY, YOUR_AWS_KEY_ID)(Region.getRegion
 
 Then you create a data model, for example a Cat:
 
-```
+```scala
 case class Cat(name: String,                 // Name of a cat
                roleName: String,             // It's role in the group
                mousesConsumed: Option[Int],  // Optional info about total number of mouses consumed
@@ -63,7 +63,7 @@ Lets assume that the roleName attribute is the hash key and the name is the sort
 
 Create mapping for data model:
 
-```
+```scala
 object Cats extends DynamoTable {
   override val name = "Cat"
   override val hashKey = DynamoString("roleName")
@@ -78,14 +78,14 @@ object Cats extends DynamoTable {
 
 Now you can add new cats to database
 
-```
+```scala
 Cats.put(Cat("Matt", "Hunter", Some(57), new DateTime().minusYears(4), List("black", "white")))
 Cats.put(Cat("Patt", "Hunter", Some(121), new DateTime().minusYears(7), List("brown", "white")))
 ```
 
 And retrieve all the cats with role 'Hunter'
 
-```
+```scala
 val hunters: Seq[Cat] = Cats.query[Cat](Seq("roleName" -> cond.eq("Hunter")))
 ```
 
