@@ -12,7 +12,6 @@ Simple framework for mapping between Scala case classes and Amazon DynamoDB item
 * Doesn't allow you to project query and get only selected attributes. It's only meant to be a mapper between database and a case class
 * Doesn't provide DSL for queries, you build them in API provided by Amazon
 * Doesn't provide a query cache
-* Still doesn't directly support update and delete operations. For now you can use awscala API instead. Work in progress!
 
 ## How to install it?
 

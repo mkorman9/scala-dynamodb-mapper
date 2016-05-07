@@ -76,4 +76,12 @@ abstract class DynamoTable[C] {
 
     resp map (v => createCaseClass(v))
   }
+
+  def delete(hashKey: Any, sortKey: Any)(implicit dynamoDB: DynamoDB) = {
+    dynamoDB.deleteItem(dynamoDB.table(name).get, hashKey, sortKey)
+  }
+
+  def delete(hashKey: Any)(implicit dynamoDB: DynamoDB) = {
+    dynamoDB.deleteItem(dynamoDB.table(name).get, hashKey)
+  }
 }
