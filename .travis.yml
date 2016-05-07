@@ -1,0 +1,13 @@
+language: java
+
+jdk:
+  - oraclejdk8
+
+before_install:
+  - find . -type f -print0 | xargs -0 sed -i "s/DYNAMIC-SNAPSHOT/0.1.${TRAVIS_BUILD_NUMBER}-SNAPSHOT/g"
+  - mkdir /tmp/dynamodb
+  - wget -O - http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest | tar xz --directory /tmp/dynamodb
+  - mv /tmp/dynamodb/* /tmp/dynamodb/dynamodb
+  - java -Djava.library.path=/tmp/dynamodb/dynamodb/DynamoDBLocal_lib -jar /tmp/dynamodb/dynamodb/DynamoDBLocal.jar -inMemory &
+
+install: "mvn install -Dmaven.javadoc.skip=true -B -V"

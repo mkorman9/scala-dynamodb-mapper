@@ -6,7 +6,7 @@
 
     <groupId>com.github.mkorman9</groupId>
     <artifactId>scala-dynamodb-mapper</artifactId>
-    <version>0.1</version>
+    <version>DYNAMIC-SNAPSHOT</version>
 
     <repositories>
         <repository>

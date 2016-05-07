@@ -18,7 +18,7 @@ Simple framework for mapping between Scala case classes and Amazon DynamoDB item
 The artifact is not uploaded to any Maven repository yet but you can install it to your local repo. To do it simply clone this project and run Maven command:
 
 ```
-mvn clean install
+mvn clean install -DskipTests
 ```
 
 and then add a dependency in your own project with Maven:
