@@ -11,3 +11,5 @@ before_install:
   - java -Djava.library.path=/tmp/dynamodb/DynamoDBLocal_lib -jar /tmp/dynamodb/DynamoDBLocal.jar -inMemory &
 
 install: "mvn install -Dmaven.javadoc.skip=true -B -V"
+
+script: true

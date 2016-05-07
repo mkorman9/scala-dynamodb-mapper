@@ -1,3 +1,5 @@
+![build status](https://travis-ci.org/mkorman9/scala-dynamodb-mapper.svg?branch=master)
+
 ## scala-dynamodb-mapper
 Simple framework for mapping between Scala case classes and Amazon DynamoDB items. Wrapper around [awscala](https://github.com/seratch/AWScala)
 
