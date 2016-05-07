@@ -34,7 +34,7 @@ and then add a dependency in your own project with Maven:
 or SBT
 
 ```
-libraryDependencies += "com.github.mkorman9" % "scala-dynamodb-mapper" % "0.1"
+libraryDependencies += "com.github.mkorman9" % "scala-dynamodb-mapper" % "DYNAMIC-SNAPSHOT"
 ```
 
 ## How to use it?

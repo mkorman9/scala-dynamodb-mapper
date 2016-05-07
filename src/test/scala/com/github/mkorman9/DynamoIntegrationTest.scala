@@ -14,10 +14,7 @@ class DynamoIntegrationTest extends FlatSpec with Matchers with BeforeAndAfterAl
     connection.createTable("Cat",
       ("roleName", ScalarAttributeType.S),
       ("name", ScalarAttributeType.S),
-      Seq(
-        ("mousesConsumed", ScalarAttributeType.N),
-        ("birthDate", ScalarAttributeType.N)
-      ),
+      Seq(),
       Seq()
     )
   }
