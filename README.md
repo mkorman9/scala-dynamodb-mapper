@@ -27,7 +27,7 @@ and then add a dependency in your own project with Maven:
 <dependency>
     <groupId>com.github.mkorman9</groupId>
     <artifactId>scala-dynamodb-mapper</artifactId>
-    <version>0.1</version>
+    <version>DYNAMIC-SNAPSHOT</version>
 </dependency>
 ```
 
