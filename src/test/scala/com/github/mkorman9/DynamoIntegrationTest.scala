@@ -1,12 +1,11 @@
 package com.github.mkorman9
 
-import awscala.dynamodbv2.DynamoDB
+import awscala.dynamodbv2.{DynamoDB, _}
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType
 import org.joda.time.DateTime
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import awscala.dynamodbv2._
+import org.scalatest._
 
-class DynamoIntegrationTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAll {
   implicit var connection: DynamoDB = _
 
   override def beforeAll = {
@@ -19,7 +18,7 @@ class DynamoIntegrationTest extends FlatSpec with Matchers with BeforeAndAfterAl
     )
   }
 
-  "Mapper" should "persist correct set of data" in {
+  test("Mapper should persist correct set of data") {
     val cats = List(CatDataModel("Johnny", "Hunter", Some(112), new DateTime().minusYears(7)),
       CatDataModel("Mike", "Worker", Some(41), new DateTime().minusYears(3)),
       CatDataModel("Pablo", "Hunter", Some(117), new DateTime().minusYears(1)),
@@ -33,13 +32,17 @@ class DynamoIntegrationTest extends FlatSpec with Matchers with BeforeAndAfterAl
     CatsMapping.put(cats(3))
     CatsMapping.put(cats(4))
 
-    val huntersBeforeRemoving = CatsMapping query { "roleName" -> cond.eq("Hunter") :: Nil }
+    val huntersBeforeRemoving = CatsMapping query {
+      "roleName" -> cond.eq("Hunter") :: Nil
+    }
     CatsMapping.delete("Hunter", "Leila")
-    val huntersAfterRemoving = CatsMapping query { "roleName" -> cond.eq("Hunter") :: Nil }
+    val huntersAfterRemoving = CatsMapping query {
+      "roleName" -> cond.eq("Hunter") :: Nil
+    }
 
-    huntersBeforeRemoving.size should be (3)
-    huntersAfterRemoving.size should be (2)
-    huntersBeforeRemoving forall (cats.contains(_)) should be (true)
-    huntersAfterRemoving forall (cats.contains(_)) should be (true)
+    huntersBeforeRemoving.size should be(3)
+    huntersAfterRemoving.size should be(2)
+    huntersBeforeRemoving forall (cats.contains(_)) should be(true)
+    huntersAfterRemoving forall (cats.contains(_)) should be(true)
   }
 }
