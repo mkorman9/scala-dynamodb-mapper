@@ -38,6 +38,10 @@ abstract class DynamoTable[C] {
     }
   }
 
+  def putAll(values: Seq[C])(implicit dynamoDB: DynamoDB): Unit = {
+    values foreach put
+  }
+
   def query(keyConditions: Seq[(String, Condition)])(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     def createCaseClass(vals: Map[String, (Option[Any], Boolean)]) = {
       val ctor = c.runtimeClass.getConstructors.head

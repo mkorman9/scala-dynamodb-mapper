@@ -26,11 +26,7 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
       CatDataModel("Leila", "Hunter", None, new DateTime().minusYears(12))
     )
 
-    CatsMapping.put(cats(0))
-    CatsMapping.put(cats(1))
-    CatsMapping.put(cats(2))
-    CatsMapping.put(cats(3))
-    CatsMapping.put(cats(4))
+    CatsMapping.putAll(cats)
 
     val huntersBeforeRemoving = CatsMapping query {
       "roleName" -> cond.eq("Hunter") :: Nil
