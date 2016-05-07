@@ -7,6 +7,30 @@
     <groupId>com.github.mkorman9</groupId>
     <artifactId>scala-dynamodb-mapper</artifactId>
     <version>DYNAMIC-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>scala-dynamodb-mapper</name>
+    <description>Simple framework for mapping between Scala case classes and Amazon DynamoDB items</description>
+    <url>https://github.com/mkorman9/scala-dynamodb-mapper</url>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Michał Korman</name>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:mkorman9/scala-dynamodb-mapper.git</connection>
+        <developerConnection>scm:git:git@github.com:mkorman9/scala-dynamodb-mapper.git</developerConnection>
+        <url>git@github.com:mkorman9/scala-dynamodb-mapper.git</url>
+    </scm>
 
     <repositories>
         <repository>
