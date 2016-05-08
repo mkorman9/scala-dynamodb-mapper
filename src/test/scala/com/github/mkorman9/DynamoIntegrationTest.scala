@@ -1,6 +1,6 @@
 package com.github.mkorman9
 
-import awscala.dynamodbv2.{DynamoDB, _}
+import awscala.dynamodbv2._
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType
 import org.joda.time.DateTime
 import org.scalatest._
@@ -19,6 +19,21 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
 
     connection.createTable("Dog",
       ("name", ScalarAttributeType.S)
+    )
+
+    connection.createTable("Duck",
+      ("roleName", ScalarAttributeType.S),
+      ("weight", ScalarAttributeType.N),
+      Seq(
+        ("height", ScalarAttributeType.N)
+      ),
+      Seq(
+        awscala.dynamodbv2.LocalSecondaryIndex(
+          "DucksByHeight",
+          Seq(KeySchema("roleName", KeyType.Hash), KeySchema("height", KeyType.Range)),
+          Projection(ProjectionType.All)
+        )
+      )
     )
   }
 
@@ -64,5 +79,19 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
     maxBeforeRemoving.size should be(1)
     maxAfterRemoving.size should be(0)
     dogs.contains(maxBeforeRemoving.head) should be(true)
+  }
+
+  test("Mapper should find entity by secondary index") {
+    val ducks = List(DuckDataModel("Spotter", 1, 10, "white"),
+      DuckDataModel("Spotter", 2, 13, "white"),
+      DuckDataModel("Spotter", 2, 12, "black"),
+      DuckDataModel("Eater", 4, 15, "white")
+    )
+
+    DucksMapping.putAll(ducks)
+    val spottersTallerThan11 = DucksMapping.query(DucksByHeightIndex, Seq("roleName" -> cond.eq("Spotter"), "height" -> cond.gt(11)))
+
+    spottersTallerThan11.size should be(2)
+    spottersTallerThan11 forall (ducks.contains(_)) should be(true)
   }
 }
