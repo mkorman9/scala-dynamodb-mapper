@@ -3,6 +3,11 @@ language: java
 jdk:
   - oraclejdk8
 
+env:
+  global:
+    - secure: "GNTyCZEpeXcPKDCw6ThmFp5bUhYmQshUDSHvvQGf2EWMoRFYixe2TTiqGgUEgEL3Kd65xrUi8Z++U1AC6ix1r3Y/u1F4WVZYioA9yrU1axUkgMdexWAHxpMD8NqqlNroPBvwtF7V6WAuEwHi0gtzB+Rk8DprTZsQTidIYhbYG5VL6ol6A5IRXCE95IiEI3gURfT71o6l/yq9VbtWoTicqZHvLMBx5ecnaN/dybYn4h03PoPnsLBPpjWQwRU2Q/N3Y1XNv0/boyLzVYbl+8SN8/xrtJr6vmJUV2xMmsil+SpsGL6BrTQojVMoRDM3kiMCj6g19bnGTT3TXqDWVBLdsQIQ9JeOKtb294F703Q1jnq4OSlHniNI41yjb30TMH6BYcx3v8Np3YjoD5RXdgy79p9SHqlyvWfSqaqTcSi38oj+glpyw3dIjxmDmlf/oRT7mYmJsMqMpGsOoMjkgWXEFyMzFCJWSB2j/TWd5Z31+0tVEz2sE9GPvhhgM4nE7tWVraKljEPDQq8WnztZjQMQ8Dr7sprrKQZA4pSsNh1h+u9vQr57Co4nZvOBQm4f0yluZKz+LL+L8lMLqF2COh/67aLsU+WcHLx/29sIeZpuryeGsPvmK82/7Bpl5utpBR2whjlKwseuIlstXyV1JOmk7AhWqEBOHXoNRf0qKvGKSOc="
+    - secure: "DXlAhWg4QNFhRw9tthZ1pUArHqhNIKiqTlYVdm0Pe1jV+fgbqsJYDcUcKb61VglE06f9WDuF8zzVKCxIH3I7rfRwcqmXnpgh78Zza4wqrmMp6QEAVIf5quzIluBM2EAayN7nR+IqoJxT4xz8hxzix026MhLnSGd3N42RRjuGn0ioeKBK2ta9vP9NYhN04Gga+LYJGGtt1ggOGKCE0PUaITD6YwAlH+EllihXSrysUrne3CTyZ0Lr9v2y5Dsy5+XQYoUrolW0qjXQZpOGhVzcR1LF0juG7bfBu5iQhw1t6GldUbEWMSMc+NMWKX5cZ35qjP2XgqonqMuWajEFuO2o2egHVWn5uT/49mb+W4c/dzt3PNTtgOQZvAE5XOZGwMxaoB4hnX611fMaPNRvXBW8TgX5M1i9o0rzQMcN1zwJfToubW1wTDVlC8+2cA4+WkunHDiWS6iV0i30+F1yUxKvpjA6Rt4/jGHKAfm0A1nW18jjNEs4cpsD/Nm28xiPy98GJIUou59h5/1kbj7KQmRdurSblLT2dW/3fjiuGE2uohKkJePjgjL3MeYWEfKbY9t+SpnRFDzhdDhX7SRcxp8dI+2+6EVTOXazXcAM/jf+Wv+Q8LoU4ix8iG1uBgs1xxAgCey/f/i42T6SpDvc1saP1a2m4JXxmQXvWnAvhMyqqek="
+
 before_install:
   - openssl aes-256-cbc -K $encrypted_9b6d7f75eb61_key -iv $encrypted_9b6d7f75eb61_iv -in .build/secret.asc.enc -out .build/secret.asc -d
   - gpg --allow-secret-key-import --import .build/secret.asc
@@ -12,6 +17,6 @@ before_install:
   - tar zxf dynamodb.tar.gz --directory /tmp/dynamodb
   - java -Djava.library.path=/tmp/dynamodb/DynamoDBLocal_lib -jar /tmp/dynamodb/DynamoDBLocal.jar -inMemory &
 
-install: "mvn install -Dmaven.javadoc.skip=true -Pci -B -V"
+install: "mvn install --settings .build/settings.xml buil-Dmaven.javadoc.skip=true -Pci -B -V"
 
 script: true
