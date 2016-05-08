@@ -2,7 +2,7 @@ package com.github.mkorman9
 
 import awscala.dynamodbv2.DynamoDB
 import com.amazonaws.services.dynamodbv2.model.Condition
-import com.github.mkorman9.exception.AttributeNotFoundException
+import com.github.mkorman9.exception.{SortKeyNotFoundException, HashKeyNotFoundException, AttributeNotFoundException}
 
 import scala.reflect.ClassTag
 
@@ -80,6 +80,9 @@ abstract class DynamoTable[C] {
     * @param keyConditions Sequence of conditions to build the query. Sequence must contain a reference to the hash key
     * @param dynamoDB Connection to database
     * @param c case class ClassTag
+    * @throws HashKeyNotFoundException When hash key is not returned in query result
+    * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
+    * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
   def query(keyConditions: Seq[(String, Condition)])(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     def createCaseClass(vals: Map[String, (Option[Any], Boolean)]) = {
@@ -95,18 +98,23 @@ abstract class DynamoTable[C] {
       ctor.newInstance(args: _*).asInstanceOf[C]
     }
     val resp: Seq[Map[String, (Option[Any], Boolean)]] = dynamoDB.table(name).get.query(keyConditions) map { item =>
-      val hashKeyValue = Some(hashKey.convertToRealValue(hashKey.retrieveValueFromItem(item).get))
+      val returnedHashKey = hashKey.retrieveValueFromItem(item)
+      if (returnedHashKey.isEmpty) throw new HashKeyNotFoundException("Hash key not retrieved from database")
+      val hashKeyValue = Some(hashKey.convertToRealValue(returnedHashKey.get))
       val keys =
         if (sortKey == DynamoEmptyAttribute)
-          Map(hashKey.name ->(hashKeyValue, true), sortKey.name ->(None, true))
-        else
-          Map(hashKey.name ->(hashKeyValue, true), sortKey.name ->
-            (Some(sortKey.convertToRealValue(sortKey.retrieveValueFromItem(item).get)), true))
+          Map(hashKey.name -> (hashKeyValue, true), sortKey.name -> (None, true))
+        else {
+          val returnedSortKey = sortKey.retrieveValueFromItem(item)
+          if (returnedSortKey.isEmpty) throw new SortKeyNotFoundException("Sort key not retrieved from database")
+          Map(hashKey.name -> (hashKeyValue, true), sortKey.name ->
+            (Some(sortKey.convertToRealValue(returnedSortKey.get)), true))
+        }
 
       keys ++ (attr map { v =>
         val value = v.retrieveValueFromItem(item)
         if (value.isDefined)
-          v.name ->(Some(v.convertToRealValue(value .get)), v.requiredValue)
+          v.name -> (Some(v.convertToRealValue(value .get)), v.requiredValue)
         else {
           if (v.requiredValue) {
             val name = v.name
