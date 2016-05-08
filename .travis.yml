@@ -17,6 +17,6 @@ before_install:
   - tar zxf dynamodb.tar.gz --directory /tmp/dynamodb
   - java -Djava.library.path=/tmp/dynamodb/DynamoDBLocal_lib -jar /tmp/dynamodb/DynamoDBLocal.jar -inMemory &
 
-install: "mvn install --settings .build/settings.xml buil-Dmaven.javadoc.skip=true -Pci -B -V"
+install: "mvn install --settings .build/settings.xml -Dmaven.javadoc.skip=true -Pci -B -V"
 
 script: true
