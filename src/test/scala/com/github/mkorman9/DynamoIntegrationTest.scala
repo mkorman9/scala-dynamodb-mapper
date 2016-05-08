@@ -25,7 +25,8 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
       ("roleName", ScalarAttributeType.S),
       ("weight", ScalarAttributeType.N),
       Seq(
-        ("height", ScalarAttributeType.N)
+        ("height", ScalarAttributeType.N),
+        ("weight", ScalarAttributeType.N)
       ),
       Seq(
         awscala.dynamodbv2.LocalSecondaryIndex(
