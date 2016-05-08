@@ -6,12 +6,38 @@ import com.github.mkorman9.exception.AttributeNotFoundException
 
 import scala.reflect.ClassTag
 
+/**
+  * Provides mapping for case class specified in parameter C
+  *
+  * @tparam C case class to map
+  */
 abstract class DynamoTable[C] {
+  /**
+    * Name of table int the database
+    */
   val name: String
+
+  /**
+    * Attribute chosen to be a hash key
+    */
   val hashKey: DynamoAttribute[_]
+
+  /**
+    * Attribute chosen to be a sort key. Sort key is not required in table
+    */
   val sortKey: DynamoAttribute[_] = DynamoEmptyAttribute
+
+  /**
+    * List of non-key attributes to map
+    */
   val attr: Seq[DynamoAttribute[_]]
 
+  /**
+    * Saves specified value in the database. If item specified by hash key and sort key already exists in database, it will be overwritten
+    *
+    * @param value Object of case class to save
+    * @param dynamoDB Connection to database
+    */
   def put(value: C)(implicit dynamoDB: DynamoDB): Unit = {
     def findValueFor(name: String) = {
       val f = value.getClass.getDeclaredField(name)
@@ -38,10 +64,23 @@ abstract class DynamoTable[C] {
     }
   }
 
+  /**
+    * Saves all of the elements specified in value in database
+    *
+    * @param values Sequence of case class objects to save
+    * @param dynamoDB Connection to database
+    */
   def putAll(values: Seq[C])(implicit dynamoDB: DynamoDB): Unit = {
     values foreach put
   }
 
+  /**
+    * Returns a result of the database query built from specified keyConditions
+    *
+    * @param keyConditions Sequence of conditions to build the query. Sequence must contain a reference to the hash key
+    * @param dynamoDB Connection to database
+    * @param c case class ClassTag
+    */
   def query(keyConditions: Seq[(String, Condition)])(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     def createCaseClass(vals: Map[String, (Option[Any], Boolean)]) = {
       val ctor = c.runtimeClass.getConstructors.head
@@ -81,10 +120,23 @@ abstract class DynamoTable[C] {
     resp map (v => createCaseClass(v))
   }
 
+  /**
+    * Deletes from database item specified by hashKey and sortKey
+    *
+    * @param hashKey Hash key of item to delete
+    * @param sortKey Sort key of item to delete
+    * @param dynamoDB Connection to database
+    */
   def delete(hashKey: Any, sortKey: Any)(implicit dynamoDB: DynamoDB) = {
     dynamoDB.deleteItem(dynamoDB.table(name).get, hashKey, sortKey)
   }
 
+  /**
+    * Deletes from database item specified by hashKey
+    *
+    * @param hashKey Hash key of item to delete
+    * @param dynamoDB Connection to database
+    */
   def delete(hashKey: Any)(implicit dynamoDB: DynamoDB) = {
     dynamoDB.deleteItem(dynamoDB.table(name).get, hashKey)
   }
