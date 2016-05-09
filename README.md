@@ -17,26 +17,20 @@ Simple framework for mapping between Scala case classes and Amazon DynamoDB item
 
 ## How to install it?
 
-The artifact is not uploaded to any Maven repository yet but you can install it to your local repo. To do it simply clone this project and run Maven command:
-
-```
-mvn clean install -DskipTests
-```
-
-and then add a dependency in your own project with Maven:
+Add a dependency in your own project with Maven
 
 ```
 <dependency>
     <groupId>com.github.mkorman9</groupId>
     <artifactId>scala-dynamodb-mapper</artifactId>
-    <version>DYNAMIC-SNAPSHOT</version>
+    <version>0.1.24</version>
 </dependency>
 ```
 
 or SBT
 
 ```
-libraryDependencies += "com.github.mkorman9" % "scala-dynamodb-mapper" % "DYNAMIC-SNAPSHOT"
+libraryDependencies += "com.github.mkorman9" % "scala-dynamodb-mapper" % "0.1.24"
 ```
 
 ## How to use it?
