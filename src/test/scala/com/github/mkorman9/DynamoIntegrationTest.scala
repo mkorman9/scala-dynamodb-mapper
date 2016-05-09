@@ -24,12 +24,15 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
 
   test("Mapper should persist correct set of data with hash and sort key") {
     val catToDelete = CatDataModel("Leila", "Hunter", None, new DateTime().minusYears(12))
-    val cats = List(CatDataModel("Johnny", "Hunter", Some(112), new DateTime().minusYears(7)),
+    val catsWithMousesOver100 = List(
+      CatDataModel("Johnny", "Hunter", Some(112), new DateTime().minusYears(7)),
+      CatDataModel("Pablo", "Hunter", Some(117), new DateTime().minusYears(1))
+    )
+    val cats = List(
       CatDataModel("Mike", "Worker", Some(41), new DateTime().minusYears(3)),
-      CatDataModel("Pablo", "Hunter", Some(117), new DateTime().minusYears(1)),
       CatDataModel("Ricky", "Unemployed", None, new DateTime().minusYears(2)),
       catToDelete
-    )
+    ) ::: catsWithMousesOver100
 
     CatsMapping.putAll(cats)
 
@@ -45,18 +48,22 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
     }
     val deletedCat = CatsMapping.get("Hunter", "Leila")
 
+    val catsWithMousesOver100FromDb = CatsMapping.scan("mousesConsumed" -> cond.gt(100) :: Nil)
+
     catToDeleteFromDb should be (Some(catToDelete))
     deletedCat should be (None)
     huntersBeforeRemoving.size should be(3)
     huntersAfterRemoving.size should be(2)
     huntersBeforeRemoving forall (cats.contains(_)) should be(true)
     huntersAfterRemoving forall (cats.contains(_)) should be(true)
+    catsWithMousesOver100FromDb should be (catsWithMousesOver100)
   }
 
   test("Mapper should persist correct set of data with just hash key") {
     val dogToDelete = DogDataModel("Max", List("black", "white"))
-    val dogs = List(dogToDelete,
-      DogDataModel("Rex", List("brown", "white"))
+    val dogs = List(
+      DogDataModel("Rex", List("brown", "white")),
+      dogToDelete
     )
 
     DogsMapping.putAll(dogs)
