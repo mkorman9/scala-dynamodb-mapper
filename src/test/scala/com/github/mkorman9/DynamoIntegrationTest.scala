@@ -73,7 +73,7 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
     }
     val deletedDog = DogsMapping.get("Max")
 
-    DogsMapping should be (Some(dogToDelete))
+    dogToDeleteFromDb should be (Some(dogToDelete))
     deletedDog should be (None)
     maxBeforeRemoving.size should be(1)
     maxAfterRemoving.size should be(0)
