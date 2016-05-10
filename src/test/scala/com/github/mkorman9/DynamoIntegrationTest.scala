@@ -20,6 +20,21 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
     connection.createTable("Dog",
       ("name", ScalarAttributeType.S)
     )
+
+    connection.createTable("Duck",
+      ("color", ScalarAttributeType.S),
+      ("name", ScalarAttributeType.S),
+      Seq(
+        ("height", ScalarAttributeType.N)
+      ),
+      Seq(
+        LocalSecondaryIndex(
+          name = "ByHeight",
+          keySchema = Seq(KeySchema("color", KeyType.Hash), KeySchema("height", KeyType.Range)),
+          projection = Projection(ProjectionType.All)
+        )
+      )
+    )
   }
 
   test("Mapper should persist correct set of data with hash and sort key") {
@@ -85,5 +100,22 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
     maxBeforeRemoving.size should be(1)
     maxAfterRemoving.size should be(0)
     dogs.contains(maxBeforeRemoving.head) should be(true)
+  }
+
+  test("Mapper should retrieve set of data using local secondary index") {
+    val whiteDucksOver4 = List(
+      DuckDataModel("White", "John", 5),
+      DuckDataModel("White", "Paul", 6)
+    )
+    val ducks = List(
+      DuckDataModel("Black", "Raul", 5),
+      DuckDataModel("White", "Mike", 3)
+    ) ::: whiteDucksOver4
+
+    DucksMapping.putAll(ducks)
+
+    val whiteDucksOver4FromDb = DucksMapping.query(DucksMapping.ByHeight, Seq("color" -> cond.eq("White"), "height" -> cond.gt(4)))
+
+    whiteDucksOver4 should be (whiteDucksOver4)
   }
 }
