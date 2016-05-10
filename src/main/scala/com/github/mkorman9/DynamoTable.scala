@@ -123,7 +123,14 @@ abstract class DynamoTable[C] {
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
   def query(keyConditions: Seq[(String, Condition)])(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
-    mapQueryResultSequence(hashKey, sortKey, attr, findTable(dynamoDB).query(keyConditions), dynamoDB, c)
+    mapQueryResultSequence(
+      hashKey = hashKey,
+      sortKey = sortKey,
+      nonKeyAttributes = attr,
+      queryResult = findTable(dynamoDB).query(keyConditions),
+      dynamoDB = dynamoDB,
+      c = c
+    )
   }
 
   /**
