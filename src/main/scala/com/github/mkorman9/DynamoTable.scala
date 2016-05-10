@@ -232,12 +232,29 @@ abstract class DynamoTable[C] {
 
   private def mapQuerySingleResult(hashKey: DynamoAttribute[_], sortKey: DynamoAttribute[_], nonKeyAttributes: Seq[DynamoAttribute[_]],
                                    queryResult: Item, dynamoDB: DynamoDB, c: ClassTag[C]): C = {
-    createCaseClass(mapItem(hashKey, sortKey, nonKeyAttributes, queryResult), c)
+    createCaseClass(
+      mapItem(
+        hashKey = hashKey,
+        sortKey = sortKey,
+        nonKeyAttributes = nonKeyAttributes,
+        item = queryResult
+      ),
+      c = c
+    )
   }
 
   private def mapQueryResultSequence(hashKey: DynamoAttribute[_], sortKey: DynamoAttribute[_],  nonKeyAttributes: Seq[DynamoAttribute[_]],
                                      queryResult: Seq[Item], dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
-    (queryResult map { mapItem(hashKey, sortKey, nonKeyAttributes, _) }) map { v => createCaseClass(v, c) }
+    (queryResult map { i =>
+      mapItem(
+        hashKey = hashKey,
+        sortKey = sortKey,
+        nonKeyAttributes = nonKeyAttributes,
+        item = i
+      )
+    }) map { v =>
+      createCaseClass(v, c)
+    }
   }
 
   private def mapItem(hashKey: DynamoAttribute[_], sortKey: DynamoAttribute[_], nonKeyAttributes: Seq[DynamoAttribute[_]],
