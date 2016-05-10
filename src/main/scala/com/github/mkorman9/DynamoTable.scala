@@ -218,7 +218,11 @@ abstract class DynamoTable[C] {
     * @param dynamoDB Connection to database
     */
   def delete(hashKey: Any, sortKey: Any)(implicit dynamoDB: DynamoDB) = {
-    dynamoDB.deleteItem(dynamoDB.table(name).get, hashKey, sortKey)
+    dynamoDB.deleteItem(
+      table = findTable(dynamoDB),
+      hashPK = hashKey,
+      rangePK = sortKey
+    )
   }
 
   /**
@@ -228,7 +232,10 @@ abstract class DynamoTable[C] {
     * @param dynamoDB Connection to database
     */
   def delete(hashKey: Any)(implicit dynamoDB: DynamoDB) = {
-    dynamoDB.deleteItem(dynamoDB.table(name).get, hashKey)
+    dynamoDB.deleteItem(
+      table = findTable(dynamoDB),
+      hashPK = hashKey
+    )
   }
 
   private def findTable(dynamoDB: DynamoDB): Table = {
