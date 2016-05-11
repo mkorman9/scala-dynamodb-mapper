@@ -14,12 +14,9 @@ object SnakesMapping extends DynamoTable[SnakeDataModel] {
     DynamoLong("length")
   )
 
-  object ByColor extends DynamoSecondaryIndex {
+  object ByColor extends DynamoSecondaryIndex(DynamoGlobalSecondaryIndex) {
     override val name: String = "ByColor"
-    override val indexType: DynamoSecondaryIndexType = DynamoGlobalSecondaryIndex
     override val hashKey: String = "color"
     override val sortKey: String = "name"
   }
 }
-
-

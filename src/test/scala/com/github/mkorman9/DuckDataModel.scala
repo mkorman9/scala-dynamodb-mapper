@@ -12,9 +12,8 @@ object DucksMapping extends DynamoTable[DuckDataModel] {
     DynamoInt("height")
   )
 
-  object ByHeight extends DynamoSecondaryIndex {
+  object ByHeight extends DynamoSecondaryIndex(DynamoLocalSecondaryIndex) {
     override val name: String = "ByHeight"
-    override val indexType: DynamoSecondaryIndexType = DynamoLocalSecondaryIndex
     override val hashKey: String = "color"
     override val sortKey: String = "height"
   }

@@ -2,17 +2,14 @@ package com.github.mkorman9
 
 /**
   * Represents secondary index of DynamoDB table
+  *
+  * @param indexType Type of index, local or global
   */
-trait DynamoSecondaryIndex {
+abstract class DynamoSecondaryIndex(val indexType: DynamoSecondaryIndexType) {
   /**
     * Name of index in database
     */
   val name: String
-
-  /**
-    * Type of index, local or global
-    */
-  val indexType: DynamoSecondaryIndexType
 
   /**
     * Name of the attribute chosen to be a hash key
