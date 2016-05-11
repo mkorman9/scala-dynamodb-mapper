@@ -93,7 +93,7 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
     huntersAfterRemoving.size should be(2)
     huntersBeforeRemoving forall (cats.contains(_)) should be(true)
     huntersAfterRemoving forall (cats.contains(_)) should be(true)
-    catsWithMousesOver100FromDb should be (catsWithMousesOver100)
+    catsWithMousesOver100FromDb.toSet should be (catsWithMousesOver100.toSet)
   }
 
   test("Mapper should persist correct set of data with just hash key") {
@@ -138,7 +138,7 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
 
     val whiteDucksOver4FromDb = DucksMapping.query(DucksMapping.ByHeight, Seq("color" -> cond.eq("White"), "height" -> cond.gt(4)))
 
-    whiteDucksOver4 should be (whiteDucksOver4)
+    whiteDucksOver4.toSet should be (whiteDucksOver4.toSet)
   }
 
   test("Mapper should retrieve set of data using global secondary index") {
@@ -155,6 +155,6 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
 
     val whiteAkensSnakesFromDb = SnakesMapping.query(SnakesMapping.ByColor, Seq("color" -> cond.eq("White"), "name" -> cond.eq("Akens")))
 
-    whiteAkensSnakesFromDb should be (whiteAkensSnakes)
+    whiteAkensSnakesFromDb.toSet should be (whiteAkensSnakes.toSet)
   }
 }
