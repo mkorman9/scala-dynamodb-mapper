@@ -35,6 +35,28 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
         )
       )
     )
+
+    val snakesTable = Table(
+      name = "Snake",
+      hashPK = "id",
+      rangePK = Some("name"),
+      attributes = Seq(
+        AttributeDefinition("id", ScalarAttributeType.N),
+        AttributeDefinition("name", ScalarAttributeType.S),
+        AttributeDefinition("color", ScalarAttributeType.S)
+      ),
+      localSecondaryIndexes = Seq(),
+      globalSecondaryIndexes = Seq(
+        GlobalSecondaryIndex(
+          name = "ByColor",
+          keySchema = Seq(KeySchema("color", KeyType.Hash), KeySchema("name", KeyType.Range)),
+          projection = Projection(ProjectionType.All),
+          provisionedThroughput = ProvisionedThroughput(5, 5)
+        )
+      ),
+      provisionedThroughput = None
+    )
+    connection.createTable(snakesTable)
   }
 
   test("Mapper should persist correct set of data with hash and sort key") {
@@ -117,5 +139,22 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
     val whiteDucksOver4FromDb = DucksMapping.query(DucksMapping.ByHeight, Seq("color" -> cond.eq("White"), "height" -> cond.gt(4)))
 
     whiteDucksOver4 should be (whiteDucksOver4)
+  }
+
+  test("Mapper should retrieve set of data using global secondary index") {
+    val whiteAkensSnakes = List(
+      SnakeDataModel(0, "Akens", "White", 5),
+      SnakeDataModel(1, "Akens", "White", 6)
+    )
+    val snakes = List(
+      SnakeDataModel(2, "Black", "Paul", 3),
+      SnakeDataModel(3, "Green", "Ryan", 6)
+    ) ::: whiteAkensSnakes
+
+    SnakesMapping.putAll(snakes)
+
+    val whiteAkensSnakesFromDb = SnakesMapping.query(SnakesMapping.ByColor, Seq("color" -> cond.eq("White"), "name" -> cond.eq("Akens")))
+
+    whiteAkensSnakesFromDb should be (whiteAkensSnakes)
   }
 }

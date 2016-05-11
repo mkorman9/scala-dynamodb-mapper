@@ -159,7 +159,7 @@ abstract class DynamoTable[C] {
         LocalSecondaryIndex(indexFoundInDatabaseOption.get)
       }
       case DynamoGlobalSecondaryIndex => {
-        val indexesList = dynamoDB.describe(table).get.getGlobalSecondaryIndexes
+        val indexesList = dynamoDB.describeTable(name).getTable.getGlobalSecondaryIndexes // describeTable() because awscala does not directly support global indexes
         if (indexesList == null) throw new SecondaryIndexNotFoundException("No global secondary indexes was found in table")
         val indexFoundInDatabaseOption = indexesList.asScala.find (_.getIndexName == index.name)
         if (indexFoundInDatabaseOption.isEmpty) throw new SecondaryIndexNotFoundException("Global secondary index with specified name was not found in table")
