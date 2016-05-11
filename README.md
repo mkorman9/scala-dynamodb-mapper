@@ -23,14 +23,14 @@ Add a dependency in your own project with Maven
 <dependency>
     <groupId>com.github.mkorman9</groupId>
     <artifactId>scala-dynamodb-mapper</artifactId>
-    <version>0.1.24</version>
+    <version>0.2.37</version>
 </dependency>
 ```
 
 or SBT
 
 ```
-libraryDependencies += "com.github.mkorman9" % "scala-dynamodb-mapper" % "0.1.24"
+libraryDependencies += "com.github.mkorman9" % "scala-dynamodb-mapper" % "0.2.37"
 ```
 
 ## How to use it?
