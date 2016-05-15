@@ -5,18 +5,18 @@ case class SnakeDataModel(id: Long,
                           color: String,
                           length: Long)
 
-object SnakesMapping extends DynamoTable[SnakeDataModel] {
-  override val name = "Snake"
-  override val hashKey = DynamoLong("id")
-  override val sortKey = DynamoString("name")
-  override val attr = List(
-    DynamoString("color"),
-    DynamoLong("length")
+object SnakesMapping extends DynamoTable[SnakeDataModel]("Snake") {
+  val id = DynamoLong("id")
+  val name = DynamoString("name")
+  val color = DynamoString("color")
+  val length = DynamoLong("length")
+
+  override val _keys = (id, name)
+  override val _nonKeyAttributes = List(
+    color, length
   )
 
-  object ByColor extends DynamoSecondaryIndex(DynamoGlobalSecondaryIndex) {
-    override val name: String = "ByColor"
-    override val hashKey: String = "color"
-    override val sortKey: String = "name"
+  object ByColor extends DynamoSecondaryIndex("ByColor", DynamoGlobalSecondaryIndex, SnakesMapping) {
+    override val _keys = (_sourceTable.color, _sourceTable.name)
   }
 }
