@@ -8,7 +8,4 @@ object DogsMapping extends DynamoTable[DogDataModel]("Dog") {
   val furColors = DynamoStringSeq("furColors")
 
   override val _keys = (name, DynamoEmptyAttribute)
-  override val _nonKeyAttributes = List(
-    furColors
-  )
 }

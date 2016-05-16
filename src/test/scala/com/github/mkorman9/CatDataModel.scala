@@ -14,8 +14,4 @@ object CatsMapping extends DynamoTable[CatDataModel]("Cat") {
   val birthDate = DynamoDateTime("birthDate")
 
   override val _keys = (roleName, name)
-  override val _nonKeyAttributes = List(
-    mousesConsumed,
-    birthDate
-  )
 }

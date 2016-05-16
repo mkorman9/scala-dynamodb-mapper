@@ -10,9 +10,6 @@ object DucksMapping extends DynamoTable[DuckDataModel]("Duck") {
   val height = DynamoInt("height")
 
   override val _keys = (color, name)
-  override val _nonKeyAttributes = List(
-      height
-  )
 
   object ByHeight extends DynamoSecondaryIndex("ByHeight", DynamoLocalSecondaryIndex, DucksMapping) {
     override val _keys = (_sourceTable.color, _sourceTable.height)

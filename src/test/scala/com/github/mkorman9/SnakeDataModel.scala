@@ -12,9 +12,6 @@ object SnakesMapping extends DynamoTable[SnakeDataModel]("Snake") {
   val length = DynamoLong("length")
 
   override val _keys = (id, name)
-  override val _nonKeyAttributes = List(
-    color, length
-  )
 
   object ByColor extends DynamoSecondaryIndex("ByColor", DynamoGlobalSecondaryIndex, SnakesMapping) {
     override val _keys = (_sourceTable.color, _sourceTable.name)

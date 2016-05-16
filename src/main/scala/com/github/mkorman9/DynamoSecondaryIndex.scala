@@ -8,7 +8,6 @@ package com.github.mkorman9
 abstract class DynamoSecondaryIndex[T <: DynamoTable[_]](nameInDatabase: String,
                                     val _indexType: DynamoSecondaryIndexType,
                                     val _sourceTable: T) extends DynamoDatabaseEntity(nameInDatabase) {
-  override val _nonKeyAttributes = List()
 }
 
 /**

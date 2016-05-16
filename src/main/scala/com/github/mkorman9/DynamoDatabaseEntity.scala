@@ -5,15 +5,17 @@ abstract class DynamoDatabaseEntity(nameInDatabase: String) {
 
   val _keys: (DynamoAttribute[_], DynamoAttribute[_])
 
-  val _nonKeyAttributes: Seq[DynamoAttribute[_]]
-
   def getHashKey: DynamoAttribute[_] = _keys._1
 
   def getSortKey: Option[DynamoAttribute[_]] = if (_keys._2 != DynamoEmptyAttribute) Some(_keys._2) else None
 
   def getKeyAttributes = List(getHashKey) ++ getSortKey.toList
 
-  def getNonKeyAttributes = _nonKeyAttributes
+  def getNonKeyAttributes = getAllAttributes filter { f => !getKeyAttributes.contains(f) }
 
-  def getAllAttributes = getKeyAttributes ++ getNonKeyAttributes
+  def getAllAttributes = this.getClass.getDeclaredMethods filter { m =>
+    !m.getName.startsWith("_")
+  } map { m =>
+    m.invoke(this, Nil : _*).asInstanceOf[DynamoAttribute[_]]
+  }
 }
