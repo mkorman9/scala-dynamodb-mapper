@@ -24,7 +24,7 @@ Add a dependency in your own project with Maven
 <dependency>
     <groupId>com.github.mkorman9</groupId>
     <artifactId>scala-dynamodb-mapper</artifactId>
-    <version>0.2.37</version>
+    <version>0.3.44</version>
 </dependency>
 ```
 
