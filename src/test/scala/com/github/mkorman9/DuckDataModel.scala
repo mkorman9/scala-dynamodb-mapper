@@ -4,17 +4,14 @@ case class DuckDataModel(color: String,
                          name: String,
                          height: Int)
 
-object DucksMapping extends DynamoTable[DuckDataModel] {
-  override val name = "Duck"
-  override val hashKey = DynamoString("color")
-  override val sortKey = DynamoString("name")
-  override val attr = List(
-    DynamoInt("height")
-  )
+object DucksMapping extends DynamoTable[DuckDataModel]("Duck") {
+  val color = DynamoString("color")
+  val name = DynamoString("name")
+  val height = DynamoInt("height")
 
-  object ByHeight extends DynamoSecondaryIndex(DynamoLocalSecondaryIndex) {
-    override val name: String = "ByHeight"
-    override val hashKey: String = "color"
-    override val sortKey: String = "height"
+  override val _keys = (color, name)
+
+  object ByHeight extends DynamoSecondaryIndex("ByHeight", DynamoLocalSecondaryIndex, DucksMapping) {
+    override val _keys = (_sourceTable.color, _sourceTable.height)
   }
 }

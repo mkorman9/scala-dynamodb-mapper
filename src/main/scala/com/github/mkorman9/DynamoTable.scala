@@ -11,28 +11,9 @@ import collection.JavaConverters._
   * Provides mapping for case class specified in parameter C
   *
   * @tparam C case class to map
+  * @param nameInDatabase Name of table in database
   */
-abstract class DynamoTable[C] {
-  /**
-    * Name of table int the database
-    */
-  val name: String
-
-  /**
-    * Attribute chosen to be a hash key
-    */
-  val hashKey: DynamoAttribute[_]
-
-  /**
-    * Attribute chosen to be a sort key. Sort key is not required in table
-    */
-  val sortKey: DynamoAttribute[_] = DynamoEmptyAttribute
-
-  /**
-    * List of non-key attributes to map
-    */
-  val attr: Seq[DynamoAttribute[_]]
-
+abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEntity(nameInDatabase) {
   /**
     * Saves specified value in the database. If item specified by hash key and sort key already exists in database, it will be overwritten
     *
@@ -45,7 +26,7 @@ abstract class DynamoTable[C] {
       f.setAccessible(true)
       f.get(value)
     }
-    val mappedAttributesList = attr.foldLeft(List[(String, Any)]()) {
+    val mappedAttributesList = getNonKeyAttributes.foldLeft(List[(String, Any)]()) {
       (acc, item) => {
         val value = findValueFor(item.name)
         value match {
@@ -55,14 +36,17 @@ abstract class DynamoTable[C] {
         }
       }
     }
-    val hashKeyValue = hashKey.convertToDatebaseReadableValue(findValueFor(hashKey.name))
-    if (sortKey == DynamoEmptyAttribute) {
-      dynamoDB.table(name).get.put(hashKeyValue, mappedAttributesList: _*)
+    val hashKeyValue = getHashKey.convertToDatebaseReadableValue(findValueFor(getHashKey.name))
+    if (getSortKey.isEmpty) {
+      findTable(dynamoDB).put(hashKeyValue, mappedAttributesList: _*)
     }
     else {
+      val sortKey = getSortKey.get
       val sortKeyValue = sortKey.convertToDatebaseReadableValue(findValueFor(sortKey.name))
-      dynamoDB.table(name).get.put(hashKeyValue, sortKeyValue, mappedAttributesList: _*)
+      findTable(dynamoDB).put(hashKeyValue, sortKeyValue, mappedAttributesList: _*)
     }
+
+
   }
 
   /**
@@ -85,9 +69,9 @@ abstract class DynamoTable[C] {
     val item = findTable(dynamoDB).get(hashPK)
     if (item.isEmpty) None
     else Some(mapQuerySingleResult(
-      hashKey = hashKey,
-      sortKey = sortKey,
-      nonKeyAttributes = attr,
+      hashKey = getHashKey,
+      sortKey = getSortKey,
+      nonKeyAttributes = getNonKeyAttributes,
       queryResult = item.get,
       dynamoDB = dynamoDB,
       c = c)
@@ -103,9 +87,9 @@ abstract class DynamoTable[C] {
   def get(hashPK: Any, sortPK: Any)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Option[C] = {
     val item = findTable(dynamoDB).get(hashPK, sortPK)
     if (item.isEmpty) None else Some(mapQuerySingleResult(
-      hashKey = hashKey,
-      sortKey = sortKey,
-      nonKeyAttributes = attr,
+      hashKey = getHashKey,
+      sortKey = getSortKey,
+      nonKeyAttributes = getNonKeyAttributes,
       queryResult = item.get,
       dynamoDB = dynamoDB,
       c = c)
@@ -124,9 +108,9 @@ abstract class DynamoTable[C] {
     */
   def query(keyConditions: Seq[(String, Condition)])(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     mapQueryResultSequence(
-      hashKey = hashKey,
-      sortKey = sortKey,
-      nonKeyAttributes = attr,
+      hashKey = getHashKey,
+      sortKey = getSortKey,
+      nonKeyAttributes = getNonKeyAttributes,
       queryResult = findTable(dynamoDB).query(keyConditions),
       dynamoDB = dynamoDB,
       c = c
@@ -144,24 +128,24 @@ abstract class DynamoTable[C] {
     * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
-  def query(index: DynamoSecondaryIndex, keyConditions: Seq[(String, Condition)])(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
+  def query(index: DynamoSecondaryIndex[_], keyConditions: Seq[(String, Condition)])(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     val table = findTable(dynamoDB)
-    val allAttributes = attr ++ List(hashKey, sortKey)
-    val indexHashKey = allAttributes.find(_.name == index.hashKey).get
-    val indexSortKey = if (index.sortKey.isEmpty) DynamoEmptyAttribute else allAttributes.find(_.name == index.sortKey).get
+    val allAttributes = getAllAttributes
+    val indexHashKey = allAttributes.find(_.name == index.getHashKey.name).get
+    val indexSortKey = if (index.getSortKey.isEmpty) None else allAttributes.find(_.name == index.getSortKey.get.name)
 
-    val secondaryIndex = index.indexType match {
+    val secondaryIndex = index._indexType match {
       case DynamoLocalSecondaryIndex => {
         val indexesList = dynamoDB.describe(table).get.getLocalSecondaryIndexes
         if (indexesList == null) throw new SecondaryIndexNotFoundException("No local secondary indexes was found in table")
-        val indexFoundInDatabaseOption = indexesList.asScala.find (_.getIndexName == index.name)
+        val indexFoundInDatabaseOption = indexesList.asScala.find (_.getIndexName == index._nameInDatabase)
         if (indexFoundInDatabaseOption.isEmpty) throw new SecondaryIndexNotFoundException("Local secondary index with specified name was not found in table")
         LocalSecondaryIndex(indexFoundInDatabaseOption.get)
       }
       case DynamoGlobalSecondaryIndex => {
-        val indexesList = dynamoDB.describeTable(name).getTable.getGlobalSecondaryIndexes // describeTable() because awscala does not directly support global indexes
+        val indexesList = dynamoDB.describeTable(_nameInDatabase).getTable.getGlobalSecondaryIndexes // describeTable() because awscala does not directly support global indexes
         if (indexesList == null) throw new SecondaryIndexNotFoundException("No global secondary indexes was found in table")
-        val indexFoundInDatabaseOption = indexesList.asScala.find (_.getIndexName == index.name)
+        val indexFoundInDatabaseOption = indexesList.asScala.find (_.getIndexName == index._nameInDatabase)
         if (indexFoundInDatabaseOption.isEmpty) throw new SecondaryIndexNotFoundException("Global secondary index with specified name was not found in table")
         GlobalSecondaryIndex(indexFoundInDatabaseOption.get)
       }
@@ -194,9 +178,9 @@ abstract class DynamoTable[C] {
   def scan(keyConditions: Seq[(String, Condition)], limit: Int = 1000, segment: Int = 0, totalSegments: Int = 1)
           (implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     mapQueryResultSequence(
-      hashKey = hashKey,
-      sortKey = sortKey,
-      nonKeyAttributes = attr,
+      hashKey = getHashKey,
+      sortKey = getSortKey,
+      nonKeyAttributes = getNonKeyAttributes,
       queryResult = findTable(dynamoDB).scan(
         filter = keyConditions,
         select = Select.ALL_ATTRIBUTES,
@@ -239,12 +223,12 @@ abstract class DynamoTable[C] {
   }
 
   private def findTable(dynamoDB: DynamoDB): Table = {
-    val tab = dynamoDB.table(name)
+    val tab = dynamoDB.table(_nameInDatabase)
     if (tab.isEmpty) throw new TableNotFoundException("Specified table was not found")
     tab.get
   }
 
-  private def mapQuerySingleResult(hashKey: DynamoAttribute[_], sortKey: DynamoAttribute[_], nonKeyAttributes: Seq[DynamoAttribute[_]],
+  private def mapQuerySingleResult(hashKey: DynamoAttribute[_], sortKey: Option[DynamoAttribute[_]], nonKeyAttributes: Seq[DynamoAttribute[_]],
                                    queryResult: Item, dynamoDB: DynamoDB, c: ClassTag[C]): C = {
     createCaseClass(
       mapItem(
@@ -257,7 +241,7 @@ abstract class DynamoTable[C] {
     )
   }
 
-  private def mapQueryResultSequence(hashKey: DynamoAttribute[_], sortKey: DynamoAttribute[_],  nonKeyAttributes: Seq[DynamoAttribute[_]],
+  private def mapQueryResultSequence(hashKey: DynamoAttribute[_], sortKey: Option[DynamoAttribute[_]],  nonKeyAttributes: Seq[DynamoAttribute[_]],
                                      queryResult: Seq[Item], dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     (queryResult map { i =>
       mapItem(
@@ -271,22 +255,20 @@ abstract class DynamoTable[C] {
     }
   }
 
-  private def mapItem(hashKey: DynamoAttribute[_], sortKey: DynamoAttribute[_], nonKeyAttributes: Seq[DynamoAttribute[_]],
+  private def mapItem(hashKey: DynamoAttribute[_], sortKey: Option[DynamoAttribute[_]], nonKeyAttributes: Seq[DynamoAttribute[_]],
                       item: Item): Map[String, (Option[Any], Boolean)] = {
     val hashKeyValue = hashKey.retrieveValueFromItem(item)
     if (hashKeyValue.isEmpty) throw new HashKeyNotFoundException("Hash key not retrieved from database")
-    val hashKeyOption = Some(hashKey.convertToRealValue(hashKeyValue.get))
+    val mappedHashKey = Some(hashKey.convertToRealValue(hashKeyValue.get))
 
-    val sortKeyOption =
-      if (sortKey == DynamoEmptyAttribute)
-        None
-      else {
-        val sortKeyValue = sortKey.retrieveValueFromItem(item)
-        if (sortKeyValue.isEmpty) throw new SortKeyNotFoundException("Sort key not retrieved from database")
-        Some(sortKey.convertToRealValue(sortKeyValue.get))
-      }
+    val mappedSortKey = sortKey map { key =>
+      val sortKeyValue = key.retrieveValueFromItem(item)
+      if (sortKeyValue.isEmpty) throw new SortKeyNotFoundException("Sort key not retrieved from database")
+      key.convertToRealValue(sortKeyValue.get)
+    }
 
-    val keys = Map(hashKey.name -> (hashKeyOption, true), sortKey.name -> (sortKeyOption, true))
+    val keys = Map(hashKey.name -> (mappedHashKey, true)) ++
+      (if (mappedSortKey.isDefined) Map(sortKey.get.name -> (mappedSortKey, true)) else Map())
 
     keys ++ {
       nonKeyAttributes map { v =>

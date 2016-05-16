@@ -3,23 +3,13 @@ package com.github.mkorman9
 /**
   * Represents secondary index of DynamoDB table
   *
-  * @param indexType Type of index, local or global
+  * @param nameInDatabase Name of table in database
+  * @param _indexType Type of index, local or global
+  * @param _sourceTable Table which is index using
   */
-abstract class DynamoSecondaryIndex(val indexType: DynamoSecondaryIndexType) {
-  /**
-    * Name of index in database
-    */
-  val name: String
-
-  /**
-    * Name of the attribute chosen to be a hash key
-    */
-  val hashKey: String
-
-  /**
-    * Name of the attribute chosen to be a sort key (could be left empty)
-    */
-  val sortKey: String = ""
+abstract class DynamoSecondaryIndex[T <: DynamoTable[_]](nameInDatabase: String,
+                                    val _indexType: DynamoSecondaryIndexType,
+                                    val _sourceTable: T) extends DynamoDatabaseEntity(nameInDatabase) {
 }
 
 /**

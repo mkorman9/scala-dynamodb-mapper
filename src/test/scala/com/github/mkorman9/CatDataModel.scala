@@ -7,12 +7,11 @@ case class CatDataModel(name: String,
                         mousesConsumed: Option[Int],
                         birthDate: DateTime)
 
-object CatsMapping extends DynamoTable[CatDataModel] {
-  override val name = "Cat"
-  override val hashKey = DynamoString("roleName")
-  override val sortKey = DynamoString("name")
-  override val attr = List(
-      DynamoInt("mousesConsumed", required = false),
-      DynamoDateTime("birthDate")
-    )
+object CatsMapping extends DynamoTable[CatDataModel]("Cat") {
+  val roleName = DynamoString("roleName")
+  val name = DynamoString("name")
+  val mousesConsumed = DynamoInt("mousesConsumed", required = false)
+  val birthDate = DynamoDateTime("birthDate")
+
+  override val _keys = (roleName, name)
 }
