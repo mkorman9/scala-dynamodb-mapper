@@ -3,7 +3,9 @@ package com.github.mkorman9
 /**
   * Represents secondary index of DynamoDB table
   *
+  * @param nameInDatabase Name of table in database
   * @param _indexType Type of index, local or global
+  * @param _sourceTable Table which is index using
   */
 abstract class DynamoSecondaryIndex[T <: DynamoTable[_]](nameInDatabase: String,
                                     val _indexType: DynamoSecondaryIndexType,

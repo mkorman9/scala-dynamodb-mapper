@@ -9,6 +9,7 @@ Simple framework for mapping between Scala case classes and Amazon DynamoDB item
 * Provides built-it mapping for basic Scala types and Joda's DateTime
 * Allows you to write mappers for your own classes
 * Allows you to declare attributes as non-required and map them to Option[T]
+* Allows you to query tables using both local and global secondary indexes
 
 ## What it doesn't do?
 * Doesn't allow you to project query and get only selected attributes. It's only meant to be a mapper between database and a case class
@@ -59,15 +60,16 @@ Lets assume that the roleName attribute is the hash key and the name is the sort
 Create mapping for data model:
 
 ```scala
-object Cats extends DynamoTable[Cat] {
-  override val name = "Cat"
-  override val hashKey = DynamoString("roleName")
-  override val sortKey = DynamoString("name")       // You can simply omit sortKey if your table doesn't contain one
-  override val attr = List(
-    DynamoInt("mousesConsumed", required = false),
-    DynamoDateTime("birthDate"),
-    DynamoStringSeq("furColors")
-  )
+object Cats extends DynamoTable[Cat]("Cat") {
+  val roleName = DynamoString("roleName")
+  val name = DynamoString("name")
+  val mousesConsumed = DynamoInt("mousesConsumed", required = false)
+  val birthDate = DynamoDateTime("birthDate")
+  val furColors = DynamoStringSeq("furColors")
+  
+  // You have to define tuple of your key attributes in format (hashKey, sortKey)
+  // You can simply omit sortKey by putting DynamoEmptyAttribute in it's place if your table doesn't contain one
+  override val _keys = (roleName, name)
 }
 ```
 
@@ -84,3 +86,14 @@ And retrieve all the cats with role 'Hunter'
 val hunters: Seq[Cat] = Cats.query(Seq("roleName" -> cond.eq("Hunter")))
 ```
 
+You can also query the data using secondary index defined in database
+
+```scala
+object CatsByMousesConsumed extends DynamoSecondaryIndex("ByMousesConsumed", DynamoLocalSecondaryIndex, Cats) {
+  override val _keys = (_sourceTable.roleName, _sourceTable.mousesConsumed)
+}
+
+val huntersWithOver4MousesConsumed: Seq[Cat] = Cats.query(CatsByMousesConsumed, 
+  Seq("roleName" -> cond.eq("Hunter"), "mousesConsumed" -> cond.gt(4))
+)
+```
