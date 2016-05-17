@@ -24,14 +24,14 @@ Add a dependency in your own project with Maven
 <dependency>
     <groupId>com.github.mkorman9</groupId>
     <artifactId>scala-dynamodb-mapper</artifactId>
-    <version>0.4.49</version>
+    <version>0.4.50</version>
 </dependency>
 ```
 
 or SBT
 
 ```
-libraryDependencies += "com.github.mkorman9" % "scala-dynamodb-mapper" % "0.4.49"
+libraryDependencies += "com.github.mkorman9" % "scala-dynamodb-mapper" % "0.4.50"
 ```
 
 ## How to use it?
@@ -40,6 +40,7 @@ At first you must establish connection with Amazon DynamoDB service:
 
 ```scala
 import com.github.mkorman9._
+import com.github.mkorman9.DynamoDSL._
 import awscala.dynamodbv2._
 
 implicit val dynamoDB = DynamoDB(YOUR_AWS_KEY, YOUR_AWS_KEY_ID)(Region.getRegion(Regions.EU_CENTRAL_1))
@@ -93,7 +94,7 @@ object CatsByMousesConsumed extends DynamoSecondaryIndex("ByMousesConsumed", Dyn
   override val _keys = (_sourceTable.roleName, _sourceTable.mousesConsumed)
 }
 
-val huntersWithOver4MousesConsumed: Seq[Cat] = Cats.query(CatsByMousesConsumed, 
-  Seq("roleName" -> cond.eq("Hunter"), "mousesConsumed" -> cond.gt(4))
+val huntersWithOver4MousesConsumed: Seq[Cat] = Cats.query(CatsByMousesConsumed,
+  Cats.roleName === "Hunter" and Cats.mousesConsumed > 4
 )
 ```
