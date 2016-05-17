@@ -9,7 +9,7 @@ env:
     - secure: "DXlAhWg4QNFhRw9tthZ1pUArHqhNIKiqTlYVdm0Pe1jV+fgbqsJYDcUcKb61VglE06f9WDuF8zzVKCxIH3I7rfRwcqmXnpgh78Zza4wqrmMp6QEAVIf5quzIluBM2EAayN7nR+IqoJxT4xz8hxzix026MhLnSGd3N42RRjuGn0ioeKBK2ta9vP9NYhN04Gga+LYJGGtt1ggOGKCE0PUaITD6YwAlH+EllihXSrysUrne3CTyZ0Lr9v2y5Dsy5+XQYoUrolW0qjXQZpOGhVzcR1LF0juG7bfBu5iQhw1t6GldUbEWMSMc+NMWKX5cZ35qjP2XgqonqMuWajEFuO2o2egHVWn5uT/49mb+W4c/dzt3PNTtgOQZvAE5XOZGwMxaoB4hnX611fMaPNRvXBW8TgX5M1i9o0rzQMcN1zwJfToubW1wTDVlC8+2cA4+WkunHDiWS6iV0i30+F1yUxKvpjA6Rt4/jGHKAfm0A1nW18jjNEs4cpsD/Nm28xiPy98GJIUou59h5/1kbj7KQmRdurSblLT2dW/3fjiuGE2uohKkJePjgjL3MeYWEfKbY9t+SpnRFDzhdDhX7SRcxp8dI+2+6EVTOXazXcAM/jf+Wv+Q8LoU4ix8iG1uBgs1xxAgCey/f/i42T6SpDvc1saP1a2m4JXxmQXvWnAvhMyqqek="
 
 before_install:
-  - export VERSION_BASE=0.3
+  - export VERSION_BASE=0.4
   - if [[ "${TRAVIS_BRANCH}" != "master" ]]; then export SNAPSHOT_VER='-SNAPSHOT'; fi
   - if [[ "$(git log --format=%B -n 1)" == *"[promote]"* ]]; then export MVN_CMD='deploy'; else export MVN_CMD='install'; fi
   - openssl aes-256-cbc -K $encrypted_9b6d7f75eb61_key -iv $encrypted_9b6d7f75eb61_iv -in .build/secret.asc.enc -out .build/secret.asc -d
