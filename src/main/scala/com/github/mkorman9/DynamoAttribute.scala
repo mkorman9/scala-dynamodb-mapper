@@ -20,7 +20,7 @@ trait DynamoAttribute[T] extends DynamoGeneralOperators {
   val name: String
 
   /**
-    * Is value required to be returned in every query. Set to false only if corresponding case class member is of type Optional[_]
+    * Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
     */
   val requiredValue: Boolean
 
@@ -72,7 +72,7 @@ object DynamoEmptyAttribute extends DynamoAttribute[Any] {
   * Provides conversion for Int value. Int is mapped directly.
   *
   * @param fieldName Name of attribute. Must match the name of case class member!
-  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Optional[_]
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
 case class DynamoInt(fieldName: String, required: Boolean = true) extends DynamoAttribute[Int] {
   override val name: String = fieldName
@@ -94,7 +94,7 @@ case class DynamoInt(fieldName: String, required: Boolean = true) extends Dynamo
   * Provides conversion for Long value. Long is mapped directly.
   *
   * @param fieldName Name of attribute. Must match the name of case class member!
-  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Optional[_]
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
 case class DynamoLong(fieldName: String, required: Boolean = true) extends DynamoAttribute[Long] {
   override val name: String = fieldName
@@ -116,9 +116,9 @@ case class DynamoLong(fieldName: String, required: Boolean = true) extends Dynam
   * Provides conversion for String value. String is mapped directly.
   *
   * @param fieldName Name of attribute. Must match the name of case class member!
-  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Optional[_]
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoString(fieldName: String, required: Boolean = true) extends DynamoAttribute[String] {
+case class DynamoString(fieldName: String, required: Boolean = true) extends DynamoAttribute[String] with DynamoStringOperators with DynamoCollectionOperators {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -138,7 +138,7 @@ case class DynamoString(fieldName: String, required: Boolean = true) extends Dyn
   * Provides conversion for Boolean value. Int is mapped directly.
   *
   * @param fieldName Name of attribute. Must match the name of case class member!
-  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Optional[_]
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
 case class DynamoBoolean(fieldName: String, required: Boolean = true) extends DynamoAttribute[Boolean] {
   override val name: String = fieldName
@@ -160,9 +160,9 @@ case class DynamoBoolean(fieldName: String, required: Boolean = true) extends Dy
   * Provides conversion for sequence of strings. Sequence of strings is mapped directly.
   *
   * @param fieldName Name of attribute. Must match the name of case class member!
-  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Optional[_]
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoStringSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[String]] {
+case class DynamoStringSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[String]] with DynamoCollectionOperators {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -182,9 +182,9 @@ case class DynamoStringSeq(fieldName: String, required: Boolean = true) extends 
   * Provides conversion for sequence of ints. Sequence of ints is mapped directly.
   *
   * @param fieldName Name of attribute. Must match the name of case class member!
-  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Optional[_]
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoIntSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[Int]] {
+case class DynamoIntSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[Int]] with DynamoCollectionOperators {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -204,9 +204,9 @@ case class DynamoIntSeq(fieldName: String, required: Boolean = true) extends Dyn
   * Provides conversion for sequence of longs. Sequence of longs is mapped directly.
   *
   * @param fieldName Name of attribute. Must match the name of case class member!
-  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Optional[_]
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoLongSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[Long]] {
+case class DynamoLongSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[Long]] with DynamoCollectionOperators {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -226,7 +226,7 @@ case class DynamoLongSeq(fieldName: String, required: Boolean = true) extends Dy
   * Provides conversion for java's ByteBuffer objects. ByteBuffer is mapped directly.
   *
   * @param fieldName Name of attribute. Must match the name of case class member!
-  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Optional[_]
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
 case class DynamoByteBuffer(fieldName: String, required: Boolean = true) extends DynamoAttribute[ByteBuffer] {
   override val name: String = fieldName
@@ -248,9 +248,9 @@ case class DynamoByteBuffer(fieldName: String, required: Boolean = true) extends
   * Provides conversion for sequence of java's ByteBuffer objects. Sequence of ByteBuffers is mapped directly.
   *
   * @param fieldName Name of attribute. Must match the name of case class member!
-  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Optional[_]
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoByteBufferSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[ByteBuffer]] {
+case class DynamoByteBufferSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[ByteBuffer]] with DynamoCollectionOperators {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -270,7 +270,7 @@ case class DynamoByteBufferSeq(fieldName: String, required: Boolean = true) exte
   * Provides conversion for sequence of Joda's DateTime objects. DateTime is stored as Long (number of milliseconds since 1 January 1970)
   *
   * @param fieldName Name of attribute. Must match the name of case class member!
-  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Optional[_]
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
 case class DynamoDateTime(fieldName: String, required: Boolean = true) extends DynamoAttribute[Long] {
   override val name: String = fieldName
