@@ -10,10 +10,10 @@ Simple framework for mapping between Scala case classes and Amazon DynamoDB item
 * Allows you to write mappers for your own classes
 * Allows you to declare attributes as non-required and map them to Option[T]
 * Allows you to query tables using both local and global secondary indexes
+* Provides simple DSL for queries
 
 ## What it doesn't do?
 * Doesn't allow you to project query and get only selected attributes. It's only meant to be a mapper between database and a case class
-* Doesn't provide DSL for queries, you build them in API provided by Amazon
 * Doesn't provide a query cache
 
 ## How to install it?
@@ -24,14 +24,14 @@ Add a dependency in your own project with Maven
 <dependency>
     <groupId>com.github.mkorman9</groupId>
     <artifactId>scala-dynamodb-mapper</artifactId>
-    <version>0.3.45</version>
+    <version>0.4.50</version>
 </dependency>
 ```
 
 or SBT
 
 ```
-libraryDependencies += "com.github.mkorman9" % "scala-dynamodb-mapper" % "0.3.45"
+libraryDependencies += "com.github.mkorman9" % "scala-dynamodb-mapper" % "0.4.50"
 ```
 
 ## How to use it?
@@ -40,6 +40,7 @@ At first you must establish connection with Amazon DynamoDB service:
 
 ```scala
 import com.github.mkorman9._
+import com.github.mkorman9.DynamoDSL._
 import awscala.dynamodbv2._
 
 implicit val dynamoDB = DynamoDB(YOUR_AWS_KEY, YOUR_AWS_KEY_ID)(Region.getRegion(Regions.EU_CENTRAL_1))
@@ -83,7 +84,7 @@ Cats.put(Cat("Patt", "Hunter", Some(121), new DateTime().minusYears(7), List("br
 And retrieve all the cats with role 'Hunter'
 
 ```scala
-val hunters: Seq[Cat] = Cats.query(Seq("roleName" -> cond.eq("Hunter")))
+val hunters: Seq[Cat] = Cats.query(Cats.roleName === "Hunter")
 ```
 
 You can also query the data using secondary index defined in database
@@ -93,7 +94,7 @@ object CatsByMousesConsumed extends DynamoSecondaryIndex("ByMousesConsumed", Dyn
   override val _keys = (_sourceTable.roleName, _sourceTable.mousesConsumed)
 }
 
-val huntersWithOver4MousesConsumed: Seq[Cat] = Cats.query(CatsByMousesConsumed, 
-  Seq("roleName" -> cond.eq("Hunter"), "mousesConsumed" -> cond.gt(4))
+val huntersWithOver4MousesConsumed: Seq[Cat] = Cats.query(CatsByMousesConsumed,
+  Cats.roleName === "Hunter" and Cats.mousesConsumed > 4
 )
 ```

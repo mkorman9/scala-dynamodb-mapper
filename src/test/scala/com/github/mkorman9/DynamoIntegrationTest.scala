@@ -4,6 +4,7 @@ import awscala.dynamodbv2.{DynamoDB, _}
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType
 import org.joda.time.DateTime
 import org.scalatest._
+import com.github.mkorman9.DynamoDSL._
 
 class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAll {
   implicit var connection: DynamoDB = _
@@ -74,18 +75,18 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
     CatsMapping.putAll(cats)
 
     val huntersBeforeRemoving = CatsMapping query {
-      "roleName" -> cond.eq("Hunter") :: Nil
+      CatsMapping.roleName === "Hunter"
     }
     val catToDeleteFromDb = CatsMapping.get("Hunter", "Leila")
 
     CatsMapping.delete("Hunter", "Leila")
 
     val huntersAfterRemoving = CatsMapping query {
-      "roleName" -> cond.eq("Hunter") :: Nil
+      CatsMapping.roleName === "Hunter"
     }
     val deletedCat = CatsMapping.get("Hunter", "Leila")
 
-    val catsWithMousesOver100FromDb = CatsMapping.scan("mousesConsumed" -> cond.gt(100) :: Nil)
+    val catsWithMousesOver100FromDb = CatsMapping scan { CatsMapping.mousesConsumed > 100 }
 
     catToDeleteFromDb should be (Some(catToDelete))
     deletedCat should be (None)
@@ -106,14 +107,14 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
     DogsMapping.putAll(dogs)
 
     val maxBeforeRemoving = DogsMapping query {
-      "name" -> cond.eq("Max") :: Nil
+      DogsMapping.name === "Max"
     }
     val dogToDeleteFromDb = DogsMapping.get("Max")
 
     DogsMapping.delete("Max")
 
     val maxAfterRemoving = DogsMapping query {
-      "name" -> cond.eq("Max") :: Nil
+      DogsMapping.name === "Max"
     }
     val deletedDog = DogsMapping.get("Max")
 
@@ -136,9 +137,11 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
 
     DucksMapping.putAll(ducks)
 
-    val whiteDucksOver4FromDb = DucksMapping.query(DucksMapping.ByHeight, Seq("color" -> cond.eq("White"), "height" -> cond.gt(4)))
+    val whiteDucksOver4FromDb = DucksMapping query(DucksMapping.ByHeight,
+      DucksMapping.color === "White" and DucksMapping.height > 4
+    )
 
-    whiteDucksOver4.toSet should be (whiteDucksOver4.toSet)
+    whiteDucksOver4FromDb.toSet should be (whiteDucksOver4.toSet)
   }
 
   test("Mapper should retrieve set of data using global secondary index") {
@@ -153,7 +156,9 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
 
     SnakesMapping.putAll(snakes)
 
-    val whiteAkensSnakesFromDb = SnakesMapping.query(SnakesMapping.ByColor, Seq("color" -> cond.eq("White"), "name" -> cond.eq("Akens")))
+    val whiteAkensSnakesFromDb = SnakesMapping.query(SnakesMapping.ByColor,
+      SnakesMapping.color === "White" and SnakesMapping.name === "Akens"
+    )
 
     whiteAkensSnakesFromDb.toSet should be (whiteAkensSnakes.toSet)
   }

@@ -128,7 +128,8 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
-  def query(index: DynamoSecondaryIndex[_], keyConditions: Seq[(String, Condition)])(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
+  def query(index: DynamoSecondaryIndex[_], keyConditions: Seq[(String, Condition)])
+           (implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     val table = findTable(dynamoDB)
     val allAttributes = getAllAttributes
     val indexHashKey = allAttributes.find(_.name == index.getHashKey.name).get
