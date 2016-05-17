@@ -13,7 +13,7 @@ import scala.collection.JavaConverters._
   *
   * @tparam T Type in which value will be stored in database
   */
-trait DynamoAttribute[T] {
+trait DynamoAttribute[T] extends DynamoGeneralOperators {
   /**
     * Name of attribute. Must match the name of case class member!
     */

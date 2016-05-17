@@ -10,10 +10,10 @@ Simple framework for mapping between Scala case classes and Amazon DynamoDB item
 * Allows you to write mappers for your own classes
 * Allows you to declare attributes as non-required and map them to Option[T]
 * Allows you to query tables using both local and global secondary indexes
+* Provides simple DSL for queries
 
 ## What it doesn't do?
 * Doesn't allow you to project query and get only selected attributes. It's only meant to be a mapper between database and a case class
-* Doesn't provide DSL for queries, you build them in API provided by Amazon
 * Doesn't provide a query cache
 
 ## How to install it?
@@ -83,7 +83,7 @@ Cats.put(Cat("Patt", "Hunter", Some(121), new DateTime().minusYears(7), List("br
 And retrieve all the cats with role 'Hunter'
 
 ```scala
-val hunters: Seq[Cat] = Cats.query(Seq("roleName" -> cond.eq("Hunter")))
+val hunters: Seq[Cat] = Cats.query(Cats.roleName === "Hunter")
 ```
 
 You can also query the data using secondary index defined in database
