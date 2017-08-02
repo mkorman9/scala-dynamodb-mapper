@@ -35,7 +35,7 @@
     </scm>
 
     <properties>
-        <scala.version>2.11.7</scala.version>
+        <scala.version>2.11.8</scala.version>
 
         <awscala.version>0.6.0</awscala.version>
         <scalatest.version>3.0.0-M15</scalatest.version>
