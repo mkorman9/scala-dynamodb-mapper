@@ -93,6 +93,94 @@ case class DynamoInt(fieldName: String, required: Boolean = true) extends Dynamo
 }
 
 /**
+  * Provides conversion for Float value. Float is mapped directly.
+  *
+  * @param fieldName Name of attribute. Must match the name of case class member!
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
+  */
+case class DynamoFloat(fieldName: String, required: Boolean = true) extends DynamoAttribute[Float, Float] {
+  override val name: String = fieldName
+
+  override val requiredValue: Boolean = required
+
+  override def retrieveValueFromItem(item: Item): Option[Float] = {
+    val v = item.attributes.find(a => a.name == name)
+    if (v.isDefined) Some(v.get.value.getN.toFloat)
+    else None
+  }
+
+  override def convertToDatabaseReadableValue(value: Any): Any = value
+
+  override def convertToRealValue(value: Any): Float = value.toString.toFloat
+}
+
+/**
+  * Provides conversion for Float value. Float is mapped directly.
+  *
+  * @param fieldName Name of attribute. Must match the name of case class member!
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
+  */
+case class DynamoDouble(fieldName: String, required: Boolean = true) extends DynamoAttribute[Double, Double] {
+  override val name: String = fieldName
+
+  override val requiredValue: Boolean = required
+
+  override def retrieveValueFromItem(item: Item): Option[Double] = {
+    val v = item.attributes.find(a => a.name == name)
+    if (v.isDefined) Some(v.get.value.getN.toDouble)
+    else None
+  }
+
+  override def convertToDatabaseReadableValue(value: Any): Any = value
+
+  override def convertToRealValue(value: Any): Double = value.toString.toDouble
+}
+
+/**
+  * Provides conversion for BigInt value. BigInt is mapped by corresponding Java type.
+  *
+  * @param fieldName Name of attribute. Must match the name of case class member!
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
+  */
+case class DynamoBigInt(fieldName: String, required: Boolean = true) extends DynamoAttribute[BigInt, java.math.BigInteger] {
+  override val name: String = fieldName
+
+  override val requiredValue: Boolean = required
+
+  override def retrieveValueFromItem(item: Item): Option[java.math.BigInteger] = {
+    val v = item.attributes.find(a => a.name == name)
+    if (v.isDefined) Some(new java.math.BigInteger(v.get.value.getN))
+    else None
+  }
+
+  override def convertToDatabaseReadableValue(value: Any): Any = value.asInstanceOf[BigInt].bigInteger
+
+  override def convertToRealValue(value: Any): BigInt = BigInt(value.toString)
+}
+
+/**
+  * Provides conversion for BigDecimal value. BigDecimal is mapped by corresponding Java type.
+  *
+  * @param fieldName Name of attribute. Must match the name of case class member!
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
+  */
+case class DynamoBigDecimal(fieldName: String, required: Boolean = true) extends DynamoAttribute[BigDecimal, java.math.BigDecimal] {
+  override val name: String = fieldName
+
+  override val requiredValue: Boolean = required
+
+  override def retrieveValueFromItem(item: Item): Option[java.math.BigDecimal] = {
+    val v = item.attributes.find(a => a.name == name)
+    if (v.isDefined) Some(new java.math.BigDecimal(v.get.value.getN))
+    else None
+  }
+
+  override def convertToDatabaseReadableValue(value: Any): Any = value.asInstanceOf[BigDecimal].bigDecimal
+
+  override def convertToRealValue(value: Any): BigDecimal = BigDecimal(value.toString)
+}
+
+/**
   * Provides conversion for Long value. Long is mapped directly.
   *
   * @param fieldName Name of attribute. Must match the name of case class member!

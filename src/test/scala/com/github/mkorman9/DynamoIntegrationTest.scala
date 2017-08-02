@@ -62,14 +62,14 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
   }
 
   test("Mapper should persist correct set of data with hash and sort key") {
-    val catToDelete = CatDataModel("Leila", "Hunter", None, LocalDateTime.now().minusYears(12))
+    val catToDelete = CatDataModel("Leila", "Hunter", None, LocalDateTime.now().minusYears(12), 10f)
     val catsWithMousesOver100 = List(
-      CatDataModel("Johnny", "Hunter", Some(112), LocalDateTime.now().minusYears(1)),
-      CatDataModel("Pablo", "Hunter", Some(117), LocalDateTime.now().minusYears(1))
+      CatDataModel("Johnny", "Hunter", Some(112), LocalDateTime.now().minusYears(1), 12.5f),
+      CatDataModel("Pablo", "Hunter", Some(117), LocalDateTime.now().minusYears(1), 14.1f)
     )
     val cats = List(
-      CatDataModel("Mike", "Worker", Some(41), LocalDateTime.now().minusYears(3)),
-      CatDataModel("Ricky", "Unemployed", None,LocalDateTime.now().minusYears(2)),
+      CatDataModel("Mike", "Worker", Some(41), LocalDateTime.now().minusYears(3), 14.2f),
+      CatDataModel("Ricky", "Unemployed", None,LocalDateTime.now().minusYears(2), 17f),
       catToDelete
     ) ::: catsWithMousesOver100
 
@@ -99,9 +99,9 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
   }
 
   test("Mapper should persist correct set of data with just hash key") {
-    val dogToDelete = DogDataModel("Max", List("black", "white"))
+    val dogToDelete = DogDataModel("Max", List("black", "white"), BigDecimal("1212123.3453453"))
     val dogs = List(
-      DogDataModel("Rex", List("brown", "white")),
+      DogDataModel("Rex", List("brown", "white"), BigDecimal("1212123.3453453")),
       dogToDelete
     )
 
