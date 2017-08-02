@@ -6,7 +6,7 @@ Simple framework for mapping between Scala case classes and Amazon DynamoDB item
 ## What does it do?
 * Provides method for putting case class objects straight into DynamoDB
 * Provides method for retrieving sequence of case class objects from DynamoDB
-* Provides built-it mapping for basic Scala types and Joda's DateTime
+* Provides built-it mapping for basic Scala types and Java DateTime API
 * Allows you to write mappers for your own classes
 * Allows you to declare attributes as non-required and map them to Option[T]
 * Allows you to query tables using both local and global secondary indexes
@@ -52,7 +52,7 @@ Then you create a data model, for example a Cat:
 case class Cat(name: String,                 // Name of a cat
                roleName: String,             // It's role in the group
                mousesConsumed: Option[Int],  // Optional info about total number of mouses consumed
-               birthDate: DateTime,          // Birth date (using Joda's DateTime) 
+               birthDate: LocalDateTime,          // Birth date
                furColors: Seq[String])       // Sequence of string describing colors of cat's fur
 ```
 
@@ -65,7 +65,7 @@ object Cats extends DynamoTable[Cat]("Cat") {
   val roleName = DynamoString("roleName")
   val name = DynamoString("name")
   val mousesConsumed = DynamoInt("mousesConsumed", required = false)
-  val birthDate = DynamoDateTime("birthDate")
+  val birthDate = DynamoLocalDateTime("birthDate")
   val furColors = DynamoStringSeq("furColors")
   
   // You have to define tuple of your key attributes in format (hashKey, sortKey)
@@ -77,8 +77,8 @@ object Cats extends DynamoTable[Cat]("Cat") {
 Now you can add new cats to database
 
 ```scala
-Cats.put(Cat("Matt", "Hunter", Some(57), new DateTime().minusYears(4), List("black", "white")))
-Cats.put(Cat("Patt", "Hunter", Some(121), new DateTime().minusYears(7), List("brown", "white")))
+Cats.put(Cat("Matt", "Hunter", Some(57), LocalDateTime.now().minusYears(4), List("black", "white")))
+Cats.put(Cat("Patt", "Hunter", Some(121), LocalDateTime.now().minusYears(7), List("brown", "white")))
 ```
 
 And retrieve all the cats with role 'Hunter'

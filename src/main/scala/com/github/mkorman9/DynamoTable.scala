@@ -230,7 +230,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     tab.get
   }
 
-  private def mapQuerySingleResult(hashKey: DynamoAttribute[_], sortKey: Option[DynamoAttribute[_]], nonKeyAttributes: Seq[DynamoAttribute[_]],
+  private def mapQuerySingleResult(hashKey: DynamoAttribute[_, _], sortKey: Option[DynamoAttribute[_, _]], nonKeyAttributes: Seq[DynamoAttribute[_, _]],
                                    queryResult: Item, dynamoDB: DynamoDB, c: ClassTag[C]): C = {
     createCaseClass(
       mapItem(
@@ -243,7 +243,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     )
   }
 
-  private def mapQueryResultSequence(hashKey: DynamoAttribute[_], sortKey: Option[DynamoAttribute[_]],  nonKeyAttributes: Seq[DynamoAttribute[_]],
+  private def mapQueryResultSequence(hashKey: DynamoAttribute[_, _], sortKey: Option[DynamoAttribute[_, _]],  nonKeyAttributes: Seq[DynamoAttribute[_, _]],
                                      queryResult: Seq[Item], dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     (queryResult map { i =>
       mapItem(
@@ -257,7 +257,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     }
   }
 
-  private def mapItem(hashKey: DynamoAttribute[_], sortKey: Option[DynamoAttribute[_]], nonKeyAttributes: Seq[DynamoAttribute[_]],
+  private def mapItem(hashKey: DynamoAttribute[_, _], sortKey: Option[DynamoAttribute[_, _]], nonKeyAttributes: Seq[DynamoAttribute[_, _]],
                       item: Item): Map[String, (Option[Any], Boolean)] = {
     val hashKeyValue = hashKey.retrieveValueFromItem(item)
     if (hashKeyValue.isEmpty) throw new HashKeyNotFoundException("Hash key not retrieved from database")
