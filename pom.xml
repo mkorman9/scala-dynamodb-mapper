@@ -37,8 +37,7 @@
     <properties>
         <scala.version>2.11.7</scala.version>
 
-        <awscala.version>0.5.5</awscala.version>
-        <joda-time.version>2.9.2</joda-time.version>
+        <awscala.version>0.6.0</awscala.version>
         <scalatest.version>3.0.0-M15</scalatest.version>
         <scalamock.version>3.2.2</scalamock.version>
     </properties>
@@ -53,12 +52,6 @@
             <groupId>com.github.seratch</groupId>
             <artifactId>awscala_2.11</artifactId>
             <version>${awscala.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-            <version>${joda-time.version}</version>
         </dependency>
 
         <dependency>

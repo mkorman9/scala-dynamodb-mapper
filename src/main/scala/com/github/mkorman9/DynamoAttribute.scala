@@ -1,9 +1,10 @@
 package com.github.mkorman9
 
 import java.nio.ByteBuffer
+import java.time.{LocalDateTime, ZonedDateTime}
+import java.time.format.DateTimeFormatter
 
 import awscala.dynamodbv2.Item
-import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
 
@@ -11,9 +12,10 @@ import scala.collection.JavaConverters._
   * Representation of single attribute of database item
   * May be extended to provide mapping for user-defined attribute types
   *
-  * @tparam T Type in which value will be stored in database
+  * @tparam Original Type utilised in business logic
+  * @tparam Stored Type in which value will be stored in database
   */
-trait DynamoAttribute[T] extends DynamoGeneralOperators {
+trait DynamoAttribute[Original, Stored] extends DynamoGeneralOperators {
   /**
     * Name of attribute. Must match the name of case class member!
     */
@@ -30,33 +32,33 @@ trait DynamoAttribute[T] extends DynamoGeneralOperators {
     * @param item Object to find value in
     * @return Value of attribute or None if it is not found
     */
-  def retrieveValueFromItem(item: Item): Option[T]
+  def retrieveValueFromItem(item: Item): Option[Stored]
 
   /**
     * Converts between value used in case class and value which is internally stored in database
-    * For some objects it's impossible to provide direct conversion. For example for Joda's DateTime, value is internally stored as number
+    * For some objects it's impossible to provide direct conversion. For example for LocalDateTime, value is internally stored as string
     * Should be a mirror for convertToRealValue
     *
     * @param value Value of attribute used in case class
     * @return Value of attribute as database internal value
     */
-  def convertToDatebaseReadableValue(value: Any): Any
+  def convertToDatabaseReadableValue(value: Any): Any
 
   /**
     * Converts between value which is internally stored in database and value used in case class
     * For some objects it's impossible to provide direct conversion. For example for Joda's DateTime, value is internally stored as number
-    * Should be a mirror for convertToDatebaseReadableValue
+    * Should be a mirror for convertToDatabaseReadableValue
     *
     * @param value Value of attribute as database internal value
     * @return Value of attribute used in case class
     */
-  def convertToRealValue(value: Any): Any
+  def convertToRealValue(value: Any): Original
 }
 
 /**
   * Defined only to provide info about empty sort key. Should not be used anywhere else
   */
-object DynamoEmptyAttribute extends DynamoAttribute[Any] {
+object DynamoEmptyAttribute extends DynamoAttribute[Any, Any] {
   override val name: String = ""
 
   override val requiredValue: Boolean = true
@@ -65,7 +67,7 @@ object DynamoEmptyAttribute extends DynamoAttribute[Any] {
 
   override def convertToRealValue(value: Any): Any = None
 
-  override def convertToDatebaseReadableValue(value: Any): Any = None
+  override def convertToDatabaseReadableValue(value: Any): Any = None
 }
 
 /**
@@ -74,7 +76,7 @@ object DynamoEmptyAttribute extends DynamoAttribute[Any] {
   * @param fieldName Name of attribute. Must match the name of case class member!
   * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoInt(fieldName: String, required: Boolean = true) extends DynamoAttribute[Int] {
+case class DynamoInt(fieldName: String, required: Boolean = true) extends DynamoAttribute[Int, Int] {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -85,9 +87,9 @@ case class DynamoInt(fieldName: String, required: Boolean = true) extends Dynamo
     else None
   }
 
-  override def convertToDatebaseReadableValue(value: Any): Any = value
+  override def convertToDatabaseReadableValue(value: Any): Any = value
 
-  override def convertToRealValue(value: Any): Any = value.toString.toInt
+  override def convertToRealValue(value: Any): Int = value.toString.toInt
 }
 
 /**
@@ -96,7 +98,7 @@ case class DynamoInt(fieldName: String, required: Boolean = true) extends Dynamo
   * @param fieldName Name of attribute. Must match the name of case class member!
   * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoLong(fieldName: String, required: Boolean = true) extends DynamoAttribute[Long] {
+case class DynamoLong(fieldName: String, required: Boolean = true) extends DynamoAttribute[Long, Long] {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -107,9 +109,9 @@ case class DynamoLong(fieldName: String, required: Boolean = true) extends Dynam
     else None
   }
 
-  override def convertToDatebaseReadableValue(value: Any): Any = value
+  override def convertToDatabaseReadableValue(value: Any): Any = value
 
-  override def convertToRealValue(value: Any): Any = value.toString.toLong
+  override def convertToRealValue(value: Any): Long = value.toString.toLong
 }
 
 /**
@@ -118,7 +120,7 @@ case class DynamoLong(fieldName: String, required: Boolean = true) extends Dynam
   * @param fieldName Name of attribute. Must match the name of case class member!
   * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoString(fieldName: String, required: Boolean = true) extends DynamoAttribute[String] with DynamoStringOperators with DynamoCollectionOperators {
+case class DynamoString(fieldName: String, required: Boolean = true) extends DynamoAttribute[String, String] with DynamoStringOperators with DynamoCollectionOperators {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -129,9 +131,9 @@ case class DynamoString(fieldName: String, required: Boolean = true) extends Dyn
     else None
   }
 
-  override def convertToDatebaseReadableValue(value: Any): Any = value
+  override def convertToDatabaseReadableValue(value: Any): Any = value
 
-  override def convertToRealValue(value: Any): Any = value.toString
+  override def convertToRealValue(value: Any): String = value.toString
 }
 
 /**
@@ -140,7 +142,7 @@ case class DynamoString(fieldName: String, required: Boolean = true) extends Dyn
   * @param fieldName Name of attribute. Must match the name of case class member!
   * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoBoolean(fieldName: String, required: Boolean = true) extends DynamoAttribute[Boolean] {
+case class DynamoBoolean(fieldName: String, required: Boolean = true) extends DynamoAttribute[Boolean, Boolean] {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -151,9 +153,9 @@ case class DynamoBoolean(fieldName: String, required: Boolean = true) extends Dy
     else None
   }
 
-  override def convertToDatebaseReadableValue(value: Any): Any = value
+  override def convertToDatabaseReadableValue(value: Any): Any = value
 
-  override def convertToRealValue(value: Any): Any = value.toString.toBoolean
+  override def convertToRealValue(value: Any): Boolean = value.toString.toBoolean
 }
 
 /**
@@ -162,7 +164,7 @@ case class DynamoBoolean(fieldName: String, required: Boolean = true) extends Dy
   * @param fieldName Name of attribute. Must match the name of case class member!
   * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoStringSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[String]] with DynamoCollectionOperators {
+case class DynamoStringSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[String], Seq[String]] with DynamoCollectionOperators {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -173,9 +175,9 @@ case class DynamoStringSeq(fieldName: String, required: Boolean = true) extends 
     else None
   }
 
-  override def convertToDatebaseReadableValue(value: Any): Any = value
+  override def convertToDatabaseReadableValue(value: Any): Any = value
 
-  override def convertToRealValue(value: Any): Any = value
+  override def convertToRealValue(value: Any): Seq[String] = value.asInstanceOf[Seq[String]]
 }
 
 /**
@@ -184,7 +186,7 @@ case class DynamoStringSeq(fieldName: String, required: Boolean = true) extends 
   * @param fieldName Name of attribute. Must match the name of case class member!
   * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoIntSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[Int]] with DynamoCollectionOperators {
+case class DynamoIntSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[Int], Seq[Int]] with DynamoCollectionOperators {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -195,9 +197,9 @@ case class DynamoIntSeq(fieldName: String, required: Boolean = true) extends Dyn
     else None
   }
 
-  override def convertToDatebaseReadableValue(value: Any): Any = value
+  override def convertToDatabaseReadableValue(value: Any): Any = value
 
-  override def convertToRealValue(value: Any): Any = value
+  override def convertToRealValue(value: Any): Seq[Int] = value.asInstanceOf[Seq[Int]]
 }
 
 /**
@@ -206,7 +208,7 @@ case class DynamoIntSeq(fieldName: String, required: Boolean = true) extends Dyn
   * @param fieldName Name of attribute. Must match the name of case class member!
   * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoLongSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[Long]] with DynamoCollectionOperators {
+case class DynamoLongSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[Long], Seq[Long]] with DynamoCollectionOperators {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -217,9 +219,9 @@ case class DynamoLongSeq(fieldName: String, required: Boolean = true) extends Dy
     else None
   }
 
-  override def convertToDatebaseReadableValue(value: Any): Any = value
+  override def convertToDatabaseReadableValue(value: Any): Any = value
 
-  override def convertToRealValue(value: Any): Any = value
+  override def convertToRealValue(value: Any): Seq[Long] = value.asInstanceOf[Seq[Long]]
 }
 
 /**
@@ -228,7 +230,7 @@ case class DynamoLongSeq(fieldName: String, required: Boolean = true) extends Dy
   * @param fieldName Name of attribute. Must match the name of case class member!
   * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoByteBuffer(fieldName: String, required: Boolean = true) extends DynamoAttribute[ByteBuffer] {
+case class DynamoByteBuffer(fieldName: String, required: Boolean = true) extends DynamoAttribute[ByteBuffer, ByteBuffer] {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -239,9 +241,9 @@ case class DynamoByteBuffer(fieldName: String, required: Boolean = true) extends
     else None
   }
 
-  override def convertToDatebaseReadableValue(value: Any): Any = value
+  override def convertToDatabaseReadableValue(value: Any): Any = value
 
-  override def convertToRealValue(value: Any): Any = value
+  override def convertToRealValue(value: Any): ByteBuffer = value.asInstanceOf[ByteBuffer]
 }
 
 /**
@@ -250,7 +252,7 @@ case class DynamoByteBuffer(fieldName: String, required: Boolean = true) extends
   * @param fieldName Name of attribute. Must match the name of case class member!
   * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoByteBufferSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[ByteBuffer]] with DynamoCollectionOperators {
+case class DynamoByteBufferSeq(fieldName: String, required: Boolean = true) extends DynamoAttribute[Seq[ByteBuffer], Seq[ByteBuffer]] with DynamoCollectionOperators {
   override val name: String = fieldName
 
   override val requiredValue: Boolean = required
@@ -261,29 +263,53 @@ case class DynamoByteBufferSeq(fieldName: String, required: Boolean = true) exte
     else None
   }
 
-  override def convertToDatebaseReadableValue(value: Any): Any = value
+  override def convertToDatabaseReadableValue(value: Any): Any = value
 
-  override def convertToRealValue(value: Any): Any = value
+  override def convertToRealValue(value: Any): Seq[ByteBuffer] = value.asInstanceOf[Seq[ByteBuffer]]
 }
 
 /**
-  * Provides conversion for sequence of Joda's DateTime objects. DateTime is stored as Long (number of milliseconds since 1 January 1970)
+  * Provides conversion for sequence of LocalDateTime objects. DateTime is stored as String
   *
   * @param fieldName Name of attribute. Must match the name of case class member!
   * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
   */
-case class DynamoDateTime(fieldName: String, required: Boolean = true) extends DynamoAttribute[Long] {
-  override val name: String = fieldName
+case class DynamoLocalDateTime(fieldName: String, required: Boolean = true) extends DynamoAttribute[LocalDateTime, String] {
+  val DateTimeFormat = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
+  override val name: String = fieldName
   override val requiredValue: Boolean = required
 
-  override def retrieveValueFromItem(item: Item): Option[Long] = {
+  override def retrieveValueFromItem(item: Item): Option[String] = {
     val v = item.attributes.find(a => a.name == name)
-    if (v.isDefined) Some(v.get.value.getN.toLong)
+    if (v.isDefined) Some(v.get.value.getS)
     else None
   }
 
-  override def convertToDatebaseReadableValue(value: Any): Any = value.asInstanceOf[DateTime].getMillis
+  override def convertToDatabaseReadableValue(value: Any): Any = DateTimeFormat.format(value.asInstanceOf[LocalDateTime])
 
-  override def convertToRealValue(value: Any): Any = new DateTime(value.asInstanceOf[Long])
+  override def convertToRealValue(value: Any): LocalDateTime = LocalDateTime.parse(value.toString, DateTimeFormat)
+}
+
+/**
+  * Provides conversion for sequence of ZonedDateTime objects. DateTime is stored as String
+  *
+  * @param fieldName Name of attribute. Must match the name of case class member!
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
+  */
+case class DynamoZonedDateTime(fieldName: String, required: Boolean = true) extends DynamoAttribute[ZonedDateTime, String] {
+  val DateTimeFormat = DateTimeFormatter.ISO_ZONED_DATE_TIME
+
+  override val name: String = fieldName
+  override val requiredValue: Boolean = required
+
+  override def retrieveValueFromItem(item: Item): Option[String] = {
+    val v = item.attributes.find(a => a.name == name)
+    if (v.isDefined) Some(v.get.value.getS)
+    else None
+  }
+
+  override def convertToDatabaseReadableValue(value: Any): Any = DateTimeFormat.format(value.asInstanceOf[ZonedDateTime])
+
+  override def convertToRealValue(value: Any): ZonedDateTime = ZonedDateTime.parse(value.toString, DateTimeFormat)
 }

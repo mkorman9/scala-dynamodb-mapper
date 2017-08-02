@@ -16,7 +16,7 @@ before_install:
   - gpg --allow-secret-key-import --import .build/secret.asc
   - find . -type f -print0 | xargs -0 sed -i "s/DYNAMIC-SNAPSHOT/${VERSION_BASE}.${TRAVIS_BUILD_NUMBER}${SNAPSHOT_VER}/g"
   - mkdir /tmp/dynamodb
-  - curl -o dynamodb.tar.gz -L http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest
+  - curl -o dynamodb.tar.gz -L https://s3-us-west-2.amazonaws.com/dynamodb-local/dynamodb_local_latest.tar.gz
   - tar zxf dynamodb.tar.gz --directory /tmp/dynamodb
   - java -Djava.library.path=/tmp/dynamodb/DynamoDBLocal_lib -jar /tmp/dynamodb/DynamoDBLocal.jar -inMemory &
 
