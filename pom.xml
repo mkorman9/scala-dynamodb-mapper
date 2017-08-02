@@ -38,8 +38,8 @@
         <scala.version>2.11.8</scala.version>
 
         <awscala.version>0.6.0</awscala.version>
-        <scalatest.version>3.0.0-M15</scalatest.version>
-        <scalamock.version>3.2.2</scalamock.version>
+        <scalatest.version>3.0.1</scalatest.version>
+        <scalamock.version>3.6.0</scalamock.version>
     </properties>
 
     <dependencies>
