@@ -14,6 +14,10 @@ import collection.JavaConverters._
   * @param nameInDatabase Name of table in database
   */
 abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEntity(nameInDatabase) {
+  type KeyConditions = Seq[(String, Condition)]
+  type MappedAttributeValues = Map[String, (Option[Any], Boolean)]
+  type AnyAttribute = DynamoAttribute[_, _]
+
   /**
     * Saves specified value in the database. If item specified by hash key and sort key already exists in database, it will be overwritten
     *
@@ -107,7 +111,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
-  def query(keyConditions: Seq[(String, Condition)])(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
+  def query(keyConditions: KeyConditions)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     mapQueryResultSequence(
       hashKey = getHashKey,
       sortKey = getSortKey,
@@ -129,7 +133,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
-  def query(index: DynamoSecondaryIndex[_], keyConditions: Seq[(String, Condition)])
+  def query(index: DynamoSecondaryIndex[_], keyConditions: KeyConditions)
            (implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     val table = findTable(dynamoDB)
     val allAttributes = getAllAttributes
@@ -177,7 +181,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
-  def scan(keyConditions: Seq[(String, Condition)], limit: Int = 1000, segment: Int = 0, totalSegments: Int = 1)
+  def scan(keyConditions: KeyConditions, limit: Int = 1000, segment: Int = 0, totalSegments: Int = 1)
           (implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     mapQueryResultSequence(
       hashKey = getHashKey,
@@ -230,7 +234,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     tab.get
   }
 
-  private def mapQuerySingleResult(hashKey: DynamoAttribute[_, _], sortKey: Option[DynamoAttribute[_, _]], nonKeyAttributes: Seq[DynamoAttribute[_, _]],
+  private def mapQuerySingleResult(hashKey: AnyAttribute, sortKey: Option[AnyAttribute], nonKeyAttributes: Seq[AnyAttribute],
                                    queryResult: Item, dynamoDB: DynamoDB, c: ClassTag[C]): C = {
     createCaseClass(
       mapItem(
@@ -243,7 +247,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     )
   }
 
-  private def mapQueryResultSequence(hashKey: DynamoAttribute[_, _], sortKey: Option[DynamoAttribute[_, _]],  nonKeyAttributes: Seq[DynamoAttribute[_, _]],
+  private def mapQueryResultSequence(hashKey: AnyAttribute, sortKey: Option[AnyAttribute],  nonKeyAttributes: Seq[AnyAttribute],
                                      queryResult: Seq[Item], dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     (queryResult map { i =>
       mapItem(
@@ -257,34 +261,57 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     }
   }
 
-  private def mapItem(hashKey: DynamoAttribute[_, _], sortKey: Option[DynamoAttribute[_, _]], nonKeyAttributes: Seq[DynamoAttribute[_, _]],
-                      item: Item): Map[String, (Option[Any], Boolean)] = {
-    val hashKeyValue = hashKey.retrieveValueFromItem(item)
-    if (hashKeyValue.isEmpty) throw new HashKeyNotFoundException("Hash key not retrieved from database")
-    val mappedHashKey = Some(hashKey.convertToRealValue(hashKeyValue.get))
+  private def mapItem(hashKey: AnyAttribute, sortKey: Option[AnyAttribute], nonKeyAttributes: Seq[AnyAttribute], item: Item): MappedAttributeValues = {
+    def resolveHashKey: Option[Any] = {
+      Some(
+        hashKey.convertToRealValue(
+          hashKey.retrieveValueFromItem(item).get
+        )
+      )
+    }
 
-    val mappedSortKey = sortKey map { key =>
+    def resolveSortKey(key: AnyAttribute): Any = {
       val sortKeyValue = key.retrieveValueFromItem(item)
-      if (sortKeyValue.isEmpty) throw new SortKeyNotFoundException("Sort key not retrieved from database")
+      if (sortKeyValue.isEmpty)
+          throw new SortKeyNotFoundException("Sort key not retrieved from database")
       key.convertToRealValue(sortKeyValue.get)
     }
 
-    val keys = Map(hashKey.name -> (mappedHashKey, true)) ++
-      (if (mappedSortKey.isDefined) Map(sortKey.get.name -> (mappedSortKey, true)) else Map())
+    def createMapFromKeys(mappedHashKey: Option[Any], mappedSortKey: Option[Any]): MappedAttributeValues = {
+      Map(hashKey.name -> (mappedHashKey, true)) ++ (
+          if (mappedSortKey.isDefined)
+            Map(sortKey.get.name -> (mappedSortKey, true))
+          else
+            Map()
+        )
+    }
 
-    keys ++ {
-      nonKeyAttributes map { v =>
+    def resolveNonKeyAttributes(): MappedAttributeValues = {
+      val mappedAttributes = nonKeyAttributes map { v =>
         val attributeValueOption = v.retrieveValueFromItem(item)
         if (attributeValueOption.isDefined)
           v.name -> (Some(v.convertToRealValue(attributeValueOption.get)), v.requiredValue)
         else {
-          if (v.requiredValue) throw new AttributeNotFoundException("Required attribute '" + v.name + "' not retrieved from database")
+          if (v.requiredValue)
+            throw new AttributeNotFoundException("Required attribute '" + v.name + "' not retrieved from database")
           v.name -> (None, false)
         }
-    }}
+      }
+
+      mappedAttributes.toMap
+    }
+
+    if (hashKey.retrieveValueFromItem(item).isEmpty)
+      throw new HashKeyNotFoundException("Hash key not retrieved from database")
+
+    val mappedHashKey: Option[Any] = resolveHashKey
+    val mappedSortKey: Option[Any] = sortKey map resolveSortKey
+    val keys: MappedAttributeValues = createMapFromKeys(mappedHashKey, mappedSortKey)
+
+    keys ++ resolveNonKeyAttributes
   }
 
-  private def createCaseClass(vals: Map[String, (Option[Any], Boolean)], c: ClassTag[C]) = {
+  private def createCaseClass(vals: MappedAttributeValues, c: ClassTag[C]) = {
     val ctor = c.runtimeClass.getConstructors.head
     val args = c.runtimeClass.getDeclaredFields.map(f => {
       val (value, required) = vals(f.getName)
