@@ -1,8 +1,9 @@
 package com.github.mkorman9
 
+import java.time.LocalDateTime
+
 import awscala.dynamodbv2.{DynamoDB, _}
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType
-import org.joda.time.DateTime
 import org.scalatest._
 import com.github.mkorman9.DynamoDSL._
 
@@ -61,14 +62,14 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
   }
 
   test("Mapper should persist correct set of data with hash and sort key") {
-    val catToDelete = CatDataModel("Leila", "Hunter", None, new DateTime().minusYears(12))
+    val catToDelete = CatDataModel("Leila", "Hunter", None, LocalDateTime.now().minusYears(12))
     val catsWithMousesOver100 = List(
-      CatDataModel("Johnny", "Hunter", Some(112), new DateTime().minusYears(7)),
-      CatDataModel("Pablo", "Hunter", Some(117), new DateTime().minusYears(1))
+      CatDataModel("Johnny", "Hunter", Some(112), LocalDateTime.now().minusYears(1)),
+      CatDataModel("Pablo", "Hunter", Some(117), LocalDateTime.now().minusYears(1))
     )
     val cats = List(
-      CatDataModel("Mike", "Worker", Some(41), new DateTime().minusYears(3)),
-      CatDataModel("Ricky", "Unemployed", None, new DateTime().minusYears(2)),
+      CatDataModel("Mike", "Worker", Some(41), LocalDateTime.now().minusYears(3)),
+      CatDataModel("Ricky", "Unemployed", None,LocalDateTime.now().minusYears(2)),
       catToDelete
     ) ::: catsWithMousesOver100
 

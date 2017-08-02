@@ -1,17 +1,17 @@
 package com.github.mkorman9
 
-import org.joda.time.DateTime
+import java.time.LocalDateTime
 
 case class CatDataModel(name: String,
                         roleName: String,
                         mousesConsumed: Option[Int],
-                        birthDate: DateTime)
+                        birthDate: LocalDateTime)
 
 object CatsMapping extends DynamoTable[CatDataModel]("Cat") {
   val roleName = DynamoString("roleName")
   val name = DynamoString("name")
   val mousesConsumed = DynamoInt("mousesConsumed", required = false)
-  val birthDate = DynamoDateTime("birthDate")
+  val birthDate = DynamoLocalDateTime("birthDate")
 
   override val _keys = (roleName, name)
 }
