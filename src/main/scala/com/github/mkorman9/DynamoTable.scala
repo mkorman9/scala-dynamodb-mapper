@@ -214,7 +214,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
   def scan(keyConditions: KeyConditions, limit: Int = 1000, segment: Int = 0, totalSegments: Int = 1)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
-    def performTableScan = {
+    def performTableScan(): Seq[Item] = {
       findTable(dynamoDB).scan(
         filter = keyConditions,
         select = Select.ALL_ATTRIBUTES,
@@ -229,7 +229,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
       hashKey = getHashKey(),
       sortKey = getSortKey(),
       nonKeyAttributes = getNonKeyAttributes(),
-      queryResult = performTableScan,
+      queryResult = performTableScan(),
       dynamoDB = dynamoDB,
       c = c
     )
