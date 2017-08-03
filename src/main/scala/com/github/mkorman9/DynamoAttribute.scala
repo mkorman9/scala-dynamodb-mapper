@@ -115,7 +115,7 @@ case class DynamoFloat(fieldName: String, required: Boolean = true) extends Dyna
 }
 
 /**
-  * Provides conversion for Float value. Float is mapped directly.
+  * Provides conversion for Double value. Double is mapped directly.
   *
   * @param fieldName Name of attribute. Must match the name of case class member!
   * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
