@@ -72,14 +72,16 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     */
   def get(hashPK: Any)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Option[C] = {
     val item = findTable(dynamoDB).get(hashPK)
-    if (item.isEmpty) None
-    else Some(mapQuerySingleResult(
-      hashKey = getHashKey,
-      sortKey = getSortKey,
-      nonKeyAttributes = getNonKeyAttributes,
-      queryResult = item.get,
-      dynamoDB = dynamoDB,
-      c = c)
+    item.flatMap(_ => Some(
+        mapQuerySingleResult(
+          hashKey = getHashKey,
+          sortKey = getSortKey,
+          nonKeyAttributes = getNonKeyAttributes,
+          queryResult = item.get,
+          dynamoDB = dynamoDB,
+          c = c
+        )
+      )
     )
   }
 
@@ -91,13 +93,16 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     */
   def get(hashPK: Any, sortPK: Any)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Option[C] = {
     val item = findTable(dynamoDB).get(hashPK, sortPK)
-    if (item.isEmpty) None else Some(mapQuerySingleResult(
-      hashKey = getHashKey,
-      sortKey = getSortKey,
-      nonKeyAttributes = getNonKeyAttributes,
-      queryResult = item.get,
-      dynamoDB = dynamoDB,
-      c = c)
+    item.flatMap(_ => Some(
+        mapQuerySingleResult(
+          hashKey = getHashKey,
+          sortKey = getSortKey,
+          nonKeyAttributes = getNonKeyAttributes,
+          queryResult = item.get,
+          dynamoDB = dynamoDB,
+          c = c
+        )
+      )
     )
   }
 
@@ -189,18 +194,22 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
   def scan(keyConditions: KeyConditions, limit: Int = 1000, segment: Int = 0, totalSegments: Int = 1)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
-    mapQueryResultSequence(
-      hashKey = getHashKey,
-      sortKey = getSortKey,
-      nonKeyAttributes = getNonKeyAttributes,
-      queryResult = findTable(dynamoDB).scan(
+    def performTableScan = {
+      findTable(dynamoDB).scan(
         filter = keyConditions,
         select = Select.ALL_ATTRIBUTES,
         attributesToGet = Nil,
         limit = limit,
         segment = segment,
         totalSegments = totalSegments
-      ),
+      )
+    }
+
+    mapQueryResultSequence(
+      hashKey = getHashKey,
+      sortKey = getSortKey,
+      nonKeyAttributes = getNonKeyAttributes,
+      queryResult = performTableScan,
       dynamoDB = dynamoDB,
       c = c
     )
@@ -235,9 +244,10 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
   }
 
   private def findTable(dynamoDB: DynamoDB): Table = {
-    val tab = dynamoDB.table(_nameInDatabase)
-    if (tab.isEmpty) throw new TableNotFoundException("Specified table was not found")
-    tab.get
+    dynamoDB.table(_nameInDatabase) match {
+      case Some(table) => table
+      case None => throw new TableNotFoundException("Specified table was not found")
+    }
   }
 
   private def mapQuerySingleResult(hashKey: AnyAttribute, sortKey: Option[AnyAttribute], nonKeyAttributes: Seq[AnyAttribute],
@@ -255,51 +265,57 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
 
   private def mapQueryResultSequence(hashKey: AnyAttribute, sortKey: Option[AnyAttribute],  nonKeyAttributes: Seq[AnyAttribute],
                                      queryResult: Seq[Item], dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
-    (queryResult map { i =>
-      mapItem(
-        hashKey = hashKey,
-        sortKey = sortKey,
-        nonKeyAttributes = nonKeyAttributes,
-        item = i
+    queryResult
+      .map(item =>
+        mapItem(
+          hashKey = hashKey,
+          sortKey = sortKey,
+          nonKeyAttributes = nonKeyAttributes,
+          item = item
+        )
       )
-    }) map { v =>
-      createCaseClass(v, c)
-    }
+      .map(v =>
+        createCaseClass(v, c)
+      )
   }
 
   private def mapItem(hashKey: AnyAttribute, sortKey: Option[AnyAttribute], nonKeyAttributes: Seq[AnyAttribute], item: Item): MappedAttributeValues = {
     def resolveHashKey: Option[Any] = {
-      Some(
-        hashKey.convertToRealValue(
-          hashKey.retrieveValueFromItem(item).get
-        )
-      )
+      val hashKeyItemValue = hashKey.retrieveValueFromItem(item).get
+      Some(hashKey.convertToRealValue(hashKeyItemValue))
     }
 
     def resolveSortKey(key: AnyAttribute): Any = {
       val sortKeyValue = key.retrieveValueFromItem(item)
       if (sortKeyValue.isEmpty)
           throw new SortKeyNotFoundException("Sort key not retrieved from database")
+
       key.convertToRealValue(sortKeyValue.get)
     }
 
     def createMapFromKeys(mappedHashKey: Option[Any], mappedSortKey: Option[Any]): MappedAttributeValues = {
-      Map(hashKey.name -> (mappedHashKey, true)) ++ (
-          if (mappedSortKey.isDefined)
-            Map(sortKey.get.name -> (mappedSortKey, true))
-          else
-            Map()
-        )
+      val mappedHashKeyWithRequire = Map(hashKey.name -> (mappedHashKey, true))
+      val mappedSortKeyWithRequire =
+        if (mappedSortKey.isDefined)
+          Map(sortKey.get.name -> (mappedSortKey, true))
+        else
+          Map()
+
+      mappedHashKeyWithRequire ++ mappedSortKeyWithRequire
     }
 
     def resolveNonKeyAttributes(): MappedAttributeValues = {
       val mappedAttributes = nonKeyAttributes map { v =>
         val attributeValueOption = v.retrieveValueFromItem(item)
-        if (attributeValueOption.isDefined)
-          v.name -> (Some(v.convertToRealValue(attributeValueOption.get)), v.requiredValue)
+        if (attributeValueOption.isDefined) {
+          val attributeRealValue = v.convertToRealValue(attributeValueOption.get)
+
+          v.name -> (Some(attributeRealValue), v.requiredValue)
+        }
         else {
           if (v.requiredValue)
             throw new AttributeNotFoundException("Required attribute '" + v.name + "' not retrieved from database")
+
           v.name -> (None, false)
         }
       }
