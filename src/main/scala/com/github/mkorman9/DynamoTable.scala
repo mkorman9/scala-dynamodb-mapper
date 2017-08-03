@@ -160,23 +160,23 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
       if (indexesList == null)
         throw new SecondaryIndexNotFoundException("No local secondary indexes was found in table")
 
-      val indexFoundInDatabaseOption = indexesList.asScala.find(_.getIndexName == index._nameInDatabase)
-      if (indexFoundInDatabaseOption.isEmpty)
-        throw new SecondaryIndexNotFoundException("Local secondary index with specified name was not found in table")
-
-      LocalSecondaryIndex(indexFoundInDatabaseOption.get)
+      val indexPotentiallyFoundInDatabase = indexesList.asScala.find(_.getIndexName == index._nameInDatabase)
+      indexPotentiallyFoundInDatabase match {
+        case None => throw new SecondaryIndexNotFoundException("Local secondary index with specified name was not found in table")
+        case Some(indexFoundInDatabase) => LocalSecondaryIndex(indexFoundInDatabase)
+      }
     }
 
-    def retrieveGlobalIndex(): GlobalSecondaryIndex = {
+    def retrieveGlobalSecondaryIndex(): GlobalSecondaryIndex = {
       val indexesList = dynamoDB.describeTable(_nameInDatabase).getTable.getGlobalSecondaryIndexes // describeTable() because awscala does not directly support global indexes
       if (indexesList == null)
         throw new SecondaryIndexNotFoundException("No global secondary indexes was found in table")
 
-      val indexFoundInDatabaseOption = indexesList.asScala.find(_.getIndexName == index._nameInDatabase)
-      if (indexFoundInDatabaseOption.isEmpty)
-        throw new SecondaryIndexNotFoundException("Global secondary index with specified name was not found in table")
-
-      GlobalSecondaryIndex(indexFoundInDatabaseOption.get)
+      val indexPotentiallyFoundInDatabase = indexesList.asScala.find(_.getIndexName == index._nameInDatabase)
+      indexPotentiallyFoundInDatabase match {
+        case None => throw new SecondaryIndexNotFoundException("Global secondary index with specified name was not found in table")
+        case Some(indexFoundInDatabase) => GlobalSecondaryIndex(indexFoundInDatabase)
+      }
     }
 
     val table = findTable(dynamoDB)
@@ -186,7 +186,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
 
     val secondaryIndex = index._indexType match {
       case DynamoLocalSecondaryIndex => retrieveLocalSecondaryIndex(table)
-      case DynamoGlobalSecondaryIndex => retrieveGlobalIndex()
+      case DynamoGlobalSecondaryIndex => retrieveGlobalSecondaryIndex()
     }
 
     val nonKeyAttributes = allAttributes filter { a => a != indexHashKey && a != secondaryIndex }
