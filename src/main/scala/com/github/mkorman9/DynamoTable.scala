@@ -344,14 +344,16 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
       mappedAttributes.toMap
     }
 
-    if (hashKey.retrieveValueFromItem(item).isEmpty)
-      throw new HashKeyNotFoundException("Hash key not retrieved from database")
+    hashKey.retrieveValueFromItem(item) match {
+      case None => throw new HashKeyNotFoundException("Hash key not retrieved from database")
+      case Some(_) => {
+        val mappedHashKey: Option[Any] = resolveHashKey
+        val mappedSortKey: Option[Any] = sortKey.map(resolveSortKey)
+        val keys: MappedAttributeValues = createMapFromKeys(mappedHashKey, mappedSortKey)
 
-    val mappedHashKey: Option[Any] = resolveHashKey
-    val mappedSortKey: Option[Any] = sortKey map resolveSortKey
-    val keys: MappedAttributeValues = createMapFromKeys(mappedHashKey, mappedSortKey)
-
-    keys ++ resolveNonKeyAttributes
+        keys ++ resolveNonKeyAttributes
+      }
+    }
   }
 
   private def createCaseClass(vals: MappedAttributeValues, c: ClassTag[C]) = {
