@@ -155,34 +155,38 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
   def query(index: DynamoSecondaryIndex[_], keyConditions: KeyConditions)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
+    def retrieveLocalSecondaryIndex(table: Table): LocalSecondaryIndex = {
+      val indexesList = dynamoDB.describe(table).get.getLocalSecondaryIndexes
+      if (indexesList == null)
+        throw new SecondaryIndexNotFoundException("No local secondary indexes was found in table")
+
+      val indexFoundInDatabaseOption = indexesList.asScala.find(_.getIndexName == index._nameInDatabase)
+      if (indexFoundInDatabaseOption.isEmpty)
+        throw new SecondaryIndexNotFoundException("Local secondary index with specified name was not found in table")
+
+      LocalSecondaryIndex(indexFoundInDatabaseOption.get)
+    }
+
+    def retrieveGlobalIndex(): GlobalSecondaryIndex = {
+      val indexesList = dynamoDB.describeTable(_nameInDatabase).getTable.getGlobalSecondaryIndexes // describeTable() because awscala does not directly support global indexes
+      if (indexesList == null)
+        throw new SecondaryIndexNotFoundException("No global secondary indexes was found in table")
+
+      val indexFoundInDatabaseOption = indexesList.asScala.find(_.getIndexName == index._nameInDatabase)
+      if (indexFoundInDatabaseOption.isEmpty)
+        throw new SecondaryIndexNotFoundException("Global secondary index with specified name was not found in table")
+
+      GlobalSecondaryIndex(indexFoundInDatabaseOption.get)
+    }
+
     val table = findTable(dynamoDB)
     val allAttributes = getAllAttributes()
     val indexHashKey = allAttributes.find(_.name == index.getHashKey().name).get
-    val indexSortKey = if (index.getSortKey().isEmpty) None else allAttributes.find(_.name == index.getSortKey().get.name)
+    val indexSortKey = index.getSortKey().flatMap(sortKey => allAttributes.find(_.name == sortKey.name))
 
     val secondaryIndex = index._indexType match {
-      case DynamoLocalSecondaryIndex => {
-        val indexesList = dynamoDB.describe(table).get.getLocalSecondaryIndexes
-        if (indexesList == null)
-          throw new SecondaryIndexNotFoundException("No local secondary indexes was found in table")
-
-        val indexFoundInDatabaseOption = indexesList.asScala.find (_.getIndexName == index._nameInDatabase)
-        if (indexFoundInDatabaseOption.isEmpty)
-          throw new SecondaryIndexNotFoundException("Local secondary index with specified name was not found in table")
-
-        LocalSecondaryIndex(indexFoundInDatabaseOption.get)
-      }
-      case DynamoGlobalSecondaryIndex => {
-        val indexesList = dynamoDB.describeTable(_nameInDatabase).getTable.getGlobalSecondaryIndexes // describeTable() because awscala does not directly support global indexes
-        if (indexesList == null)
-          throw new SecondaryIndexNotFoundException("No global secondary indexes was found in table")
-
-        val indexFoundInDatabaseOption = indexesList.asScala.find (_.getIndexName == index._nameInDatabase)
-        if (indexFoundInDatabaseOption.isEmpty)
-          throw new SecondaryIndexNotFoundException("Global secondary index with specified name was not found in table")
-
-        GlobalSecondaryIndex(indexFoundInDatabaseOption.get)
-      }
+      case DynamoLocalSecondaryIndex => retrieveLocalSecondaryIndex(table)
+      case DynamoGlobalSecondaryIndex => retrieveGlobalIndex()
     }
 
     val nonKeyAttributes = allAttributes filter { a => a != indexHashKey && a != secondaryIndex }
