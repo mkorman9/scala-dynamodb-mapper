@@ -133,8 +133,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
-  def query(index: DynamoSecondaryIndex[_], keyConditions: KeyConditions)
-           (implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
+  def query(index: DynamoSecondaryIndex[_], keyConditions: KeyConditions)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     val table = findTable(dynamoDB)
     val allAttributes = getAllAttributes
     val indexHashKey = allAttributes.find(_.name == index.getHashKey.name).get
@@ -143,16 +142,24 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     val secondaryIndex = index._indexType match {
       case DynamoLocalSecondaryIndex => {
         val indexesList = dynamoDB.describe(table).get.getLocalSecondaryIndexes
-        if (indexesList == null) throw new SecondaryIndexNotFoundException("No local secondary indexes was found in table")
+        if (indexesList == null)
+          throw new SecondaryIndexNotFoundException("No local secondary indexes was found in table")
+
         val indexFoundInDatabaseOption = indexesList.asScala.find (_.getIndexName == index._nameInDatabase)
-        if (indexFoundInDatabaseOption.isEmpty) throw new SecondaryIndexNotFoundException("Local secondary index with specified name was not found in table")
+        if (indexFoundInDatabaseOption.isEmpty)
+          throw new SecondaryIndexNotFoundException("Local secondary index with specified name was not found in table")
+
         LocalSecondaryIndex(indexFoundInDatabaseOption.get)
       }
       case DynamoGlobalSecondaryIndex => {
         val indexesList = dynamoDB.describeTable(_nameInDatabase).getTable.getGlobalSecondaryIndexes // describeTable() because awscala does not directly support global indexes
-        if (indexesList == null) throw new SecondaryIndexNotFoundException("No global secondary indexes was found in table")
+        if (indexesList == null)
+          throw new SecondaryIndexNotFoundException("No global secondary indexes was found in table")
+
         val indexFoundInDatabaseOption = indexesList.asScala.find (_.getIndexName == index._nameInDatabase)
-        if (indexFoundInDatabaseOption.isEmpty) throw new SecondaryIndexNotFoundException("Global secondary index with specified name was not found in table")
+        if (indexFoundInDatabaseOption.isEmpty)
+          throw new SecondaryIndexNotFoundException("Global secondary index with specified name was not found in table")
+
         GlobalSecondaryIndex(indexFoundInDatabaseOption.get)
       }
     }
@@ -181,8 +188,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
-  def scan(keyConditions: KeyConditions, limit: Int = 1000, segment: Int = 0, totalSegments: Int = 1)
-          (implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
+  def scan(keyConditions: KeyConditions, limit: Int = 1000, segment: Int = 0, totalSegments: Int = 1)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     mapQueryResultSequence(
       hashKey = getHashKey,
       sortKey = getSortKey,
