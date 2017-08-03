@@ -25,33 +25,49 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @param dynamoDB Connection to database
     */
   def put(value: C)(implicit dynamoDB: DynamoDB): Unit = {
-    def findValueFor(name: String) = {
-      val f = value.getClass.getDeclaredField(name)
-      f.setAccessible(true)
-      f.get(value)
+    def findValueForField(fieldName: String): Any = {
+      val field = value.getClass.getDeclaredField(fieldName)
+      field.setAccessible(true)
+      field.get(value)
     }
 
-    val mappedAttributesList = getNonKeyAttributes.foldLeft(List[(String, Any)]()) {
-      (acc, item) => {
-        val value = findValueFor(item.name)
-        value match {
-          case None => acc
-          case Some(v) => (item.name, item.convertToDatabaseReadableValue(v)) :: acc
-          case _ => (item.name, item.convertToDatabaseReadableValue(value)) :: acc
+    def mapAttributesToDatabaseTypes(): List[(String, Any)] = {
+      getNonKeyAttributes().foldLeft(List[(String, Any)]()) {
+        (accumulated, item) => {
+          findValueForField(item.name) match {
+            case None => accumulated
+            case Some(v) => (item.name, item.convertToDatabaseReadableValue(v)) :: accumulated
+            case _ => (item.name, item.convertToDatabaseReadableValue(findValueForField(item.name))) :: accumulated
+          }
         }
       }
     }
-    val hashKeyValue = getHashKey.convertToDatabaseReadableValue(findValueFor(getHashKey.name))
-    if (getSortKey.isEmpty) {
-      findTable(dynamoDB).put(hashKeyValue, mappedAttributesList: _*)
-    }
-    else {
-      val sortKey = getSortKey.get
-      val sortKeyValue = sortKey.convertToDatabaseReadableValue(findValueFor(sortKey.name))
-      findTable(dynamoDB).put(hashKeyValue, sortKeyValue, mappedAttributesList: _*)
+
+    def mapHashKeyToDatabaseType(): Any = {
+      getHashKey().convertToDatabaseReadableValue(findValueForField(getHashKey().name))
     }
 
+    val attributesListMappedToDatabaseTypes = mapAttributesToDatabaseTypes()
+    val hashKeyValueMappedToDatabaseType = mapHashKeyToDatabaseType()
+    val optionalSortKey = getSortKey()
 
+    optionalSortKey match {
+      case Some(sortKey) => {
+        val sortKeyMappedToDatabaseTypes = sortKey.convertToDatabaseReadableValue(findValueForField(sortKey.name))
+
+        findTable(dynamoDB).put(
+          hashKeyValueMappedToDatabaseType,
+          sortKeyMappedToDatabaseTypes,
+          attributesListMappedToDatabaseTypes: _*
+        )
+      }
+      case None => {
+        findTable(dynamoDB).put(
+          hashKeyValueMappedToDatabaseType,
+          attributesListMappedToDatabaseTypes: _*
+        )
+      }
+    }
   }
 
   /**
@@ -74,9 +90,9 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     val item = findTable(dynamoDB).get(hashPK)
     item.flatMap(_ => Some(
         mapQuerySingleResult(
-          hashKey = getHashKey,
-          sortKey = getSortKey,
-          nonKeyAttributes = getNonKeyAttributes,
+          hashKey = getHashKey(),
+          sortKey = getSortKey(),
+          nonKeyAttributes = getNonKeyAttributes(),
           queryResult = item.get,
           dynamoDB = dynamoDB,
           c = c
@@ -95,9 +111,9 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     val item = findTable(dynamoDB).get(hashPK, sortPK)
     item.flatMap(_ => Some(
         mapQuerySingleResult(
-          hashKey = getHashKey,
-          sortKey = getSortKey,
-          nonKeyAttributes = getNonKeyAttributes,
+          hashKey = getHashKey(),
+          sortKey = getSortKey(),
+          nonKeyAttributes = getNonKeyAttributes(),
           queryResult = item.get,
           dynamoDB = dynamoDB,
           c = c
@@ -118,9 +134,9 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     */
   def query(keyConditions: KeyConditions)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     mapQueryResultSequence(
-      hashKey = getHashKey,
-      sortKey = getSortKey,
-      nonKeyAttributes = getNonKeyAttributes,
+      hashKey = getHashKey(),
+      sortKey = getSortKey(),
+      nonKeyAttributes = getNonKeyAttributes(),
       queryResult = findTable(dynamoDB).query(keyConditions),
       dynamoDB = dynamoDB,
       c = c
@@ -140,9 +156,9 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     */
   def query(index: DynamoSecondaryIndex[_], keyConditions: KeyConditions)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     val table = findTable(dynamoDB)
-    val allAttributes = getAllAttributes
-    val indexHashKey = allAttributes.find(_.name == index.getHashKey.name).get
-    val indexSortKey = if (index.getSortKey.isEmpty) None else allAttributes.find(_.name == index.getSortKey.get.name)
+    val allAttributes = getAllAttributes()
+    val indexHashKey = allAttributes.find(_.name == index.getHashKey().name).get
+    val indexSortKey = if (index.getSortKey().isEmpty) None else allAttributes.find(_.name == index.getSortKey().get.name)
 
     val secondaryIndex = index._indexType match {
       case DynamoLocalSecondaryIndex => {
@@ -206,9 +222,9 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     }
 
     mapQueryResultSequence(
-      hashKey = getHashKey,
-      sortKey = getSortKey,
-      nonKeyAttributes = getNonKeyAttributes,
+      hashKey = getHashKey(),
+      sortKey = getSortKey(),
+      nonKeyAttributes = getNonKeyAttributes(),
       queryResult = performTableScan,
       dynamoDB = dynamoDB,
       c = c
@@ -222,7 +238,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @param sortKey Sort key of item to delete
     * @param dynamoDB Connection to database
     */
-  def delete(hashKey: Any, sortKey: Any)(implicit dynamoDB: DynamoDB) = {
+  def delete(hashKey: Any, sortKey: Any)(implicit dynamoDB: DynamoDB): Unit = {
     dynamoDB.deleteItem(
       table = findTable(dynamoDB),
       hashPK = hashKey,
@@ -236,7 +252,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @param hashKey Hash key of item to delete
     * @param dynamoDB Connection to database
     */
-  def delete(hashKey: Any)(implicit dynamoDB: DynamoDB) = {
+  def delete(hashKey: Any)(implicit dynamoDB: DynamoDB): Unit = {
     dynamoDB.deleteItem(
       table = findTable(dynamoDB),
       hashPK = hashKey

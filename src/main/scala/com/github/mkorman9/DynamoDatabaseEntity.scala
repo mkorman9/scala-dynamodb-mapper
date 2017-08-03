@@ -21,14 +21,14 @@ abstract class DynamoDatabaseEntity(nameInDatabase: String) {
     *
     * @return Hash key from _keys tuple
     */
-  def getHashKey: DynamoAttribute[_, _] = _keys._1
+  def getHashKey(): DynamoAttribute[_, _] = _keys._1
 
   /**
     * Sort key
     *
     * @return Some(...) when sort key is present and None if second key is equal to DynamoEmptyAttribute
     */
-  def getSortKey: Option[DynamoAttribute[_, _]] =
+  def getSortKey(): Option[DynamoAttribute[_, _]] =
     if (_keys._2 != DynamoEmptyAttribute)
       Some(_keys._2)
     else
@@ -39,21 +39,21 @@ abstract class DynamoDatabaseEntity(nameInDatabase: String) {
     *
     * @return List of key attributes build from _keys tuple
     */
-  def getKeyAttributes = getHashKey :: getSortKey.toList
+  def getKeyAttributes() = getHashKey :: getSortKey().toList
 
   /**
     * List of non-key attributes
     *
     * @return List of all attributes without key attributes
     */
-  def getNonKeyAttributes = getAllAttributes filter { f => !getKeyAttributes.contains(f) }
+  def getNonKeyAttributes() = getAllAttributes filter { f => !getKeyAttributes().contains(f) }
 
   /**
     * List of all attributes
     *
     * @return List of both key and non-key attributes
     */
-  def getAllAttributes = this.getClass.getDeclaredMethods filter { m =>
+  def getAllAttributes() = this.getClass.getDeclaredMethods filter { m =>
     !m.getName.startsWith("_")
   } map { m =>
     m.invoke(this, Nil : _*).asInstanceOf[DynamoAttribute[_, _]]
