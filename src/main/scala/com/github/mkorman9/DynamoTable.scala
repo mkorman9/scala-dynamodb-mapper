@@ -89,7 +89,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
   def get(hashPK: Any)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Option[C] = {
     val item = findTable(dynamoDB).get(hashPK)
     item.flatMap(_ => Some(
-        mapQuerySingleResult(
+        mapQueryResultToCaseClass(
           hashKey = getHashKey(),
           sortKey = getSortKey(),
           nonKeyAttributes = getNonKeyAttributes(),
@@ -110,7 +110,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
   def get(hashPK: Any, sortPK: Any)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Option[C] = {
     val item = findTable(dynamoDB).get(hashPK, sortPK)
     item.flatMap(_ => Some(
-        mapQuerySingleResult(
+        mapQueryResultToCaseClass(
           hashKey = getHashKey(),
           sortKey = getSortKey(),
           nonKeyAttributes = getNonKeyAttributes(),
@@ -133,7 +133,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
   def query(keyConditions: KeyConditions)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
-    mapQueryResultSequence(
+    mapQueryResultsListToCaseClass(
       hashKey = getHashKey(),
       sortKey = getSortKey(),
       nonKeyAttributes = getNonKeyAttributes(),
@@ -190,7 +190,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     }
 
     val nonKeyAttributes = allAttributes filter { a => a != indexHashKey && a != secondaryIndex }
-    mapQueryResultSequence(
+    mapQueryResultsListToCaseClass(
       hashKey = indexHashKey,
       sortKey = indexSortKey,
       nonKeyAttributes = nonKeyAttributes,
@@ -225,7 +225,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
       )
     }
 
-    mapQueryResultSequence(
+    mapQueryResultsListToCaseClass(
       hashKey = getHashKey(),
       sortKey = getSortKey(),
       nonKeyAttributes = getNonKeyAttributes(),
@@ -270,10 +270,10 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     }
   }
 
-  private def mapQuerySingleResult(hashKey: AnyAttribute, sortKey: Option[AnyAttribute], nonKeyAttributes: Seq[AnyAttribute],
+  private def mapQueryResultToCaseClass(hashKey: AnyAttribute, sortKey: Option[AnyAttribute], nonKeyAttributes: Seq[AnyAttribute],
                                    queryResult: Item, dynamoDB: DynamoDB, c: ClassTag[C]): C = {
     createCaseClass(
-      mapItem(
+      mapDatabaseItemToRealValues(
         hashKey = hashKey,
         sortKey = sortKey,
         nonKeyAttributes = nonKeyAttributes,
@@ -283,11 +283,11 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     )
   }
 
-  private def mapQueryResultSequence(hashKey: AnyAttribute, sortKey: Option[AnyAttribute],  nonKeyAttributes: Seq[AnyAttribute],
+  private def mapQueryResultsListToCaseClass(hashKey: AnyAttribute, sortKey: Option[AnyAttribute],  nonKeyAttributes: Seq[AnyAttribute],
                                      queryResult: Seq[Item], dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     queryResult
       .map(item =>
-        mapItem(
+        mapDatabaseItemToRealValues(
           hashKey = hashKey,
           sortKey = sortKey,
           nonKeyAttributes = nonKeyAttributes,
@@ -299,7 +299,8 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
       )
   }
 
-  private def mapItem(hashKey: AnyAttribute, sortKey: Option[AnyAttribute], nonKeyAttributes: Seq[AnyAttribute], item: Item): MappedAttributeValues = {
+  private def mapDatabaseItemToRealValues(hashKey: AnyAttribute, sortKey: Option[AnyAttribute],
+                                  nonKeyAttributes: Seq[AnyAttribute], item: Item): MappedAttributeValues = {
     def resolveHashKey: Option[Any] = {
       val hashKeyItemValue = hashKey.retrieveValueFromItem(item).get
       Some(hashKey.convertToRealValue(hashKeyItemValue))
