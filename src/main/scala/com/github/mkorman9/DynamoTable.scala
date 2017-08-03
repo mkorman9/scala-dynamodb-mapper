@@ -37,7 +37,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
           findValueForField(item.name) match {
             case None => accumulated
             case Some(v) => (item.name, item.convertToDatabaseReadableValue(v)) :: accumulated
-            case _ => (item.name, item.convertToDatabaseReadableValue(findValueForField(item.name))) :: accumulated
+            case v => (item.name, item.convertToDatabaseReadableValue(v)) :: accumulated
           }
         }
       }
