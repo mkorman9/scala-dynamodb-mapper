@@ -33,10 +33,9 @@ trait DynamoAttribute[Original, Stored] extends DynamoGeneralOperators {
     * @return Value of attribute or None if it is not found
     */
   def retrieveValueFromItem(item: Item): Option[Stored] = {
-    item.attributes.find(a => a.name == name) match {
-      case Some(attribute) => Some(extractValueFromAttributeValue(attribute.value))
-      case None => None
-    }
+    item.attributes
+      .find(a => a.name == name)
+      .flatMap(attribute => Some(extractValueFromAttributeValue(attribute.value)))
   }
 
   /**
