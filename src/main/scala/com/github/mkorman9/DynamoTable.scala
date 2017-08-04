@@ -3,6 +3,7 @@ package com.github.mkorman9
 import awscala.dynamodbv2._
 import com.amazonaws.services.dynamodbv2.model.{Select, Condition}
 import com.github.mkorman9.exception._
+import DynamoDSL.QueryParts
 
 import scala.reflect.ClassTag
 import collection.JavaConverters._
@@ -14,7 +15,6 @@ import collection.JavaConverters._
   * @param nameInDatabase Name of table in database
   */
 abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEntity(nameInDatabase) {
-  type KeyConditions = Seq[(String, Condition)]
   type MappedAttributeValues = Map[String, (Option[Any], Boolean)]
   type AnyAttribute = DynamoAttribute[_, _]
 
@@ -125,19 +125,19 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
   /**
     * Returns a result of the database query built from specified keyConditions
     *
-    * @param keyConditions Sequence of conditions to build the query. Sequence must contain a reference to the hash key
+    * @param queryParts Sequence of conditions to build the query. Sequence must contain a reference to the hash key
     * @param dynamoDB Connection to database
     * @param c case class ClassTag
     * @throws HashKeyNotFoundException When hash key is not returned in query result
     * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
-  def query(keyConditions: KeyConditions)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
+  def query(queryParts: QueryParts)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     mapQueryResultsListToCaseClass(
       hashKey = getHashKey(),
       sortKey = getSortKey(),
       nonKeyAttributes = getNonKeyAttributes(),
-      queryResult = findTable(dynamoDB).query(keyConditions),
+      queryResult = findTable(dynamoDB).query(queryParts),
       dynamoDB = dynamoDB,
       c = c
     )
@@ -147,14 +147,14 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * Returns a result of the database query built from specified keyConditions. Query is performed in secondary index specified as parameter
     *
     * @param index Secondary index to perform query on
-    * @param keyConditions Sequence of conditions to build the query. Sequence must contain a reference to the hash key
+    * @param queryParts Sequence of conditions to build the query. Sequence must contain a reference to the hash key
     * @param dynamoDB Connection to database
     * @param c case class ClassTag
     * @throws HashKeyNotFoundException When hash key is not returned in query result
     * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
-  def query(index: DynamoSecondaryIndex[_], keyConditions: KeyConditions)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
+  def query(index: DynamoSecondaryIndex[_], queryParts: QueryParts)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     def retrieveLocalSecondaryIndex(table: Table): LocalSecondaryIndex = {
       val indexesList = dynamoDB.describe(table).get.getLocalSecondaryIndexes
       if (indexesList == null)
@@ -194,7 +194,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
       hashKey = indexHashKey,
       sortKey = indexSortKey,
       nonKeyAttributes = nonKeyAttributes,
-      queryResult = findTable(dynamoDB).queryWithIndex(secondaryIndex, keyConditions),
+      queryResult = findTable(dynamoDB).queryWithIndex(secondaryIndex, queryParts),
       dynamoDB = dynamoDB,
       c = c
     )
@@ -203,7 +203,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
   /**
     * Returns a result of the database table scan built from specified keyConditions
     *
-    * @param keyConditions Sequence of conditions to build the query
+    * @param queryParts Sequence of conditions to build the query
     * @param limit Maximum counts of items returned
     * @param segment Number of segment to retrieve
     * @param totalSegments Total number of segments
@@ -213,10 +213,10 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
-  def scan(keyConditions: KeyConditions, limit: Int = 1000, segment: Int = 0, totalSegments: Int = 1)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
+  def scan(queryParts: QueryParts, limit: Int = 1000, segment: Int = 0, totalSegments: Int = 1)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     def performTableScan(): Seq[Item] = {
       findTable(dynamoDB).scan(
-        filter = keyConditions,
+        filter = queryParts,
         select = Select.ALL_ATTRIBUTES,
         attributesToGet = Nil,
         limit = limit,

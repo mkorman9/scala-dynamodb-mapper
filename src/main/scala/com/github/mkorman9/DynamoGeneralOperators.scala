@@ -3,6 +3,8 @@ package com.github.mkorman9
 import awscala.dynamodbv2._
 import com.amazonaws.services.dynamodbv2.model.Condition
 
+import DynamoDSL.QueryParts
+
 /**
   * Marker used for classes defining operators for queries DSL
   */
@@ -23,7 +25,7 @@ trait DynamoGeneralOperators extends DynamoOperators {
     * @param value Value to compare with
     * @return Element of query used in DSL
     */
-  def ===(value: Any): Seq[(String, Condition)] = {
+  def ===(value: Any): QueryParts = {
     Seq(this.name -> cond.eq(value))
   }
 
@@ -33,7 +35,7 @@ trait DynamoGeneralOperators extends DynamoOperators {
     * @param value Value to compare with
     * @return Element of query used in DSL
     */
-  def !==(value: Any): Seq[(String, Condition)] = {
+  def !==(value: Any): QueryParts = {
     Seq(this.name -> cond.ne(value))
   }
 
@@ -43,7 +45,7 @@ trait DynamoGeneralOperators extends DynamoOperators {
     * @param value Value to compare with
     * @return Element of query used in DSL
     */
-  def >(value: Any): Seq[(String, Condition)] = {
+  def >(value: Any): QueryParts = {
     Seq(this.name -> cond.gt(value))
   }
 
@@ -53,7 +55,7 @@ trait DynamoGeneralOperators extends DynamoOperators {
     * @param value Value to compare with
     * @return Element of query used in DSL
     */
-  def <(value: Any): Seq[(String, Condition)] = {
+  def <(value: Any): QueryParts = {
     Seq(this.name -> cond.lt(value))
   }
 
@@ -63,7 +65,7 @@ trait DynamoGeneralOperators extends DynamoOperators {
     * @param value Value to compare with
     * @return Element of query used in DSL
     */
-  def >=(value: Any): Seq[(String, Condition)] = {
+  def >=(value: Any): QueryParts = {
     Seq(this.name -> cond.ge(value))
   }
 
@@ -73,7 +75,7 @@ trait DynamoGeneralOperators extends DynamoOperators {
     * @param value Value to compare with
     * @return Element of query used in DSL
     */
-  def <=(value: Any): Seq[(String, Condition)] = {
+  def <=(value: Any): QueryParts = {
     Seq(this.name -> cond.le(value))
   }
 
@@ -82,7 +84,7 @@ trait DynamoGeneralOperators extends DynamoOperators {
     *
     * @return Element of query used in DSL
     */
-  def isNotNull: Seq[(String, Condition)] = {
+  def isNotNull: QueryParts = {
     Seq(this.name -> cond.isNotNull)
   }
 
@@ -91,7 +93,7 @@ trait DynamoGeneralOperators extends DynamoOperators {
     *
     * @return Element of query used in DSL
     */
-  def isNull: Seq[(String, Condition)] = {
+  def isNull: QueryParts = {
     Seq(this.name -> cond.isNull)
   }
 
@@ -101,7 +103,7 @@ trait DynamoGeneralOperators extends DynamoOperators {
     * @param value Value to compare with
     * @return Element of query used in DSL
     */
-  def between(value: Any*): Seq[(String, Condition)] = {
+  def between(value: Any*): QueryParts = {
     Seq(this.name -> cond.between(value))
   }
 
@@ -111,7 +113,7 @@ trait DynamoGeneralOperators extends DynamoOperators {
     * @param value Value to compare with
     * @return Element of query used in DSL
     */
-  def in(value: Any*): Seq[(String, Condition)] = {
+  def in(value: Any*): QueryParts = {
     Seq(this.name -> cond.in(value))
   }
 }
@@ -125,7 +127,7 @@ trait DynamoCollectionOperators extends DynamoOperators {
     *
     * @return Element of query used in DSL
     */
-  def contains(value: Any*): Seq[(String, Condition)] = {
+  def contains(value: Any*): QueryParts = {
     Seq(this.name -> cond.contains(value))
   }
 
@@ -134,7 +136,7 @@ trait DynamoCollectionOperators extends DynamoOperators {
     *
     * @return Element of query used in DSL
     */
-  def notContains(value: Any*): Seq[(String, Condition)] = {
+  def notContains(value: Any*): QueryParts = {
     Seq(this.name -> cond.notContains(value))
   }
 }
@@ -148,7 +150,7 @@ trait DynamoStringOperators extends DynamoOperators {
     *
     * @return Element of query used in DSL
     */
-  def beginsWith(value: Any*): Seq[(String, Condition)] = {
+  def beginsWith(value: Any*): QueryParts = {
     Seq(this.name -> cond.beginsWith(value))
   }
 }

@@ -7,21 +7,22 @@ import com.amazonaws.services.dynamodbv2.model.Condition
   * Contains implicit classes that might be imported using import DynamoDSL._
   */
 object DynamoDSL {
+  type QueryParts = Seq[(String, Condition)]
 
   /**
     * Class that provides operators for joining parts of queries
     *
-    * @param querySequence Base of query
+    * @param queryParts Base of query
     */
-  implicit class QueryPartsJoiner(val querySequence: Seq[(String, Condition)]) {
+  implicit class QueryPartsJoiner(val queryParts: QueryParts) {
     /**
       * Adds second query part to base
       *
       * @param another Another query part to join
       * @return Joined queries
       */
-    def and(another: Seq[(String, Condition)]) = {
-      querySequence ++ another
+    def and(another: QueryParts) = {
+      queryParts ++ another
     }
   }
 }
