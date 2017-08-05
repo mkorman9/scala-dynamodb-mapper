@@ -35,7 +35,7 @@ trait DynamoAttribute[Original, Stored] extends DynamoGeneralOperators {
   def retrieveValueFromItem(item: Item): Option[Stored] = {
     item.attributes
       .find(a => a.name == name)
-      .flatMap(attribute => Some(extractValueFromAttributeValue(attribute.value)))
+      .map(attribute => extractValueFromAttributeValue(attribute.value))
   }
 
   /**

@@ -88,15 +88,14 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     */
   def get(hashPK: Any)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Option[C] = {
     val item = findTable(dynamoDB).get(hashPK)
-    item.flatMap(_ => Some(
-        mapQueryResultToCaseClass(
-          hashKey = getHashKey(),
-          sortKey = getSortKey(),
-          nonKeyAttributes = getNonKeyAttributes(),
-          queryResult = item.get,
-          dynamoDB = dynamoDB,
-          c = c
-        )
+    item.map(_ =>
+      mapQueryResultToCaseClass(
+        hashKey = getHashKey(),
+        sortKey = getSortKey(),
+        nonKeyAttributes = getNonKeyAttributes(),
+        queryResult = item.get,
+        dynamoDB = dynamoDB,
+        c = c
       )
     )
   }
@@ -109,15 +108,14 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     */
   def get(hashPK: Any, sortPK: Any)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Option[C] = {
     val item = findTable(dynamoDB).get(hashPK, sortPK)
-    item.flatMap(_ => Some(
-        mapQueryResultToCaseClass(
-          hashKey = getHashKey(),
-          sortKey = getSortKey(),
-          nonKeyAttributes = getNonKeyAttributes(),
-          queryResult = item.get,
-          dynamoDB = dynamoDB,
-          c = c
-        )
+    item.map(_ =>
+      mapQueryResultToCaseClass(
+        hashKey = getHashKey(),
+        sortKey = getSortKey(),
+        nonKeyAttributes = getNonKeyAttributes(),
+        queryResult = item.get,
+        dynamoDB = dynamoDB,
+        c = c
       )
     )
   }
