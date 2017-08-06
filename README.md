@@ -24,15 +24,17 @@ Add a dependency in your own project with Maven
 <dependency>
     <groupId>com.github.mkorman9</groupId>
     <artifactId>scala-dynamodb-mapper</artifactId>
-    <version>0.5.59</version>
+    <version>LATEST_VERSION</version>
 </dependency>
 ```
 
 or SBT
 
 ```
-libraryDependencies += "com.github.mkorman9" % "scala-dynamodb-mapper" % "0.5.59"
+libraryDependencies += "com.github.mkorman9" % "scala-dynamodb-mapper" % "LATEST_VERSION"
 ```
+
+Where LATEST_VERSION can be found [HERE](https://mvnrepository.com/artifact/com.github.mkorman9/scala-dynamodb-mapper)
 
 ## How to use it?
 
@@ -98,3 +100,10 @@ val huntersWithOver4MousesConsumed: Seq[Cat] = Cats.query(CatsByMousesConsumed,
   Cats.roleName === "Hunter" and Cats.mousesConsumed > 4
 )
 ```
+
+## How to contribute?
+
+* Identify missing feature or bug to fix
+* Create feature branch to work on. It is the best idea to choose *develop* as source branch, to avoid problems with merge.
+* Apply your changes and push it
+* Create pull request against *develop* branch, and wait for comments/approve
