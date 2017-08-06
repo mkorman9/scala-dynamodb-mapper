@@ -18,8 +18,8 @@ cache:
 
 before_install:
   - export VERSION_BASE=0.5
-  - if [[ "${TRAVIS_BRANCH}" != "release-"* ]]; then export SNAPSHOT_VER='-SNAPSHOT'; fi
-  - if [[ "${TRAVIS_BRANCH}" == "release-"* ] && ["$TRAVIS_PULL_REQUEST" == "false"]]; then export MVN_CMD='deploy'; else export MVN_CMD='package'; fi
+  - if [[ "${TRAVIS_BRANCH}" != "master" ]]; then export SNAPSHOT_VER='-SNAPSHOT'; fi
+  - if [[ "${TRAVIS_BRANCH}" == "master" ] && ["$TRAVIS_PULL_REQUEST" == "false"]]; then export MVN_CMD='deploy'; else export MVN_CMD='package'; fi
   - openssl aes-256-cbc -K $encrypted_9b6d7f75eb61_key -iv $encrypted_9b6d7f75eb61_iv -in .build/secret.asc.enc -out .build/secret.asc -d
   - gpg --allow-secret-key-import --import .build/secret.asc
   - find . -type f -print0 | xargs -0 sed -i "s/DYNAMIC-SNAPSHOT/${VERSION_BASE}${SNAPSHOT_VER}/g"
