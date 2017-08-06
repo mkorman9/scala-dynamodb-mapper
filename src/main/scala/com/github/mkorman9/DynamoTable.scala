@@ -1,12 +1,12 @@
 package com.github.mkorman9
 
 import awscala.dynamodbv2._
-import com.amazonaws.services.dynamodbv2.model.{Select, Condition}
+import com.amazonaws.services.dynamodbv2.model.Select
+import com.github.mkorman9.DynamoDSL.QueryParts
 import com.github.mkorman9.exception._
-import DynamoDSL.QueryParts
 
+import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
-import collection.JavaConverters._
 
 /**
   * Provides mapping for case class specified in parameter C
@@ -17,6 +17,8 @@ import collection.JavaConverters._
 abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEntity(nameInDatabase) {
   type MappedAttributeValues = Map[String, (Option[Any], Boolean)]
   type AnyAttribute = DynamoAttribute[_, _]
+
+  private var _cachedTableReference: Option[Table] = None
 
   /**
     * Saves specified value in the database. If item specified by hash key and sort key already exists in database, it will be overwritten
@@ -47,6 +49,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
       getHashKey().convertToDatabaseReadableValue(findValueForField(getHashKey().name))
     }
 
+    val table = findCachedTableObject(dynamoDB)
     val attributesListMappedToDatabaseTypes = mapAttributesToDatabaseTypes()
     val hashKeyValueMappedToDatabaseType = mapHashKeyToDatabaseType()
     val optionalSortKey = getSortKey()
@@ -55,14 +58,14 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
       case Some(sortKey) => {
         val sortKeyMappedToDatabaseTypes = sortKey.convertToDatabaseReadableValue(findValueForField(sortKey.name))
 
-        findTable(dynamoDB).put(
+        table.put(
           hashKeyValueMappedToDatabaseType,
           sortKeyMappedToDatabaseTypes,
           attributesListMappedToDatabaseTypes: _*
         )
       }
       case None => {
-        findTable(dynamoDB).put(
+        table.put(
           hashKeyValueMappedToDatabaseType,
           attributesListMappedToDatabaseTypes: _*
         )
@@ -87,7 +90,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @return Item or None if it was not found
     */
   def get(hashPK: Any)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Option[C] = {
-    val item = findTable(dynamoDB).get(hashPK)
+    val item = findCachedTableObject(dynamoDB).get(hashPK)
     item.map(_ =>
       mapQueryResultToCaseClass(
         hashKey = getHashKey(),
@@ -107,7 +110,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @return Item or None if it was not found
     */
   def get(hashPK: Any, sortPK: Any)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Option[C] = {
-    val item = findTable(dynamoDB).get(hashPK, sortPK)
+    val item = findCachedTableObject(dynamoDB).get(hashPK, sortPK)
     item.map(_ =>
       mapQueryResultToCaseClass(
         hashKey = getHashKey(),
@@ -135,7 +138,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
       hashKey = getHashKey(),
       sortKey = getSortKey(),
       nonKeyAttributes = getNonKeyAttributes(),
-      queryResult = findTable(dynamoDB).query(queryParts),
+      queryResult = findCachedTableObject(dynamoDB).query(queryParts),
       dynamoDB = dynamoDB,
       c = c
     )
@@ -177,7 +180,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
       }
     }
 
-    val table = findTable(dynamoDB)
+    val table = findCachedTableObject(dynamoDB)
     val allAttributes = getAllAttributes()
     val indexHashKey = allAttributes.find(_.name == index.getHashKey().name).get
     val indexSortKey = index.getSortKey().flatMap(sortKey => allAttributes.find(_.name == sortKey.name))
@@ -192,7 +195,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
       hashKey = indexHashKey,
       sortKey = indexSortKey,
       nonKeyAttributes = nonKeyAttributes,
-      queryResult = findTable(dynamoDB).queryWithIndex(secondaryIndex, queryParts),
+      queryResult = findCachedTableObject(dynamoDB).queryWithIndex(secondaryIndex, queryParts),
       dynamoDB = dynamoDB,
       c = c
     )
@@ -213,7 +216,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     */
   def scan(queryParts: QueryParts, limit: Int = 1000, segment: Int = 0, totalSegments: Int = 1)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     def performTableScan(): Seq[Item] = {
-      findTable(dynamoDB).scan(
+      findCachedTableObject(dynamoDB).scan(
         filter = queryParts,
         select = Select.ALL_ATTRIBUTES,
         attributesToGet = Nil,
@@ -242,7 +245,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     */
   def delete(hashKey: Any, sortKey: Any)(implicit dynamoDB: DynamoDB): Unit = {
     dynamoDB.deleteItem(
-      table = findTable(dynamoDB),
+      table = findCachedTableObject(dynamoDB),
       hashPK = hashKey,
       rangePK = sortKey
     )
@@ -256,15 +259,24 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     */
   def delete(hashKey: Any)(implicit dynamoDB: DynamoDB): Unit = {
     dynamoDB.deleteItem(
-      table = findTable(dynamoDB),
+      table = findCachedTableObject(dynamoDB),
       hashPK = hashKey
     )
   }
 
-  private def findTable(dynamoDB: DynamoDB): Table = {
-    dynamoDB.table(_nameInDatabase) match {
-      case Some(table) => table
-      case None => throw new TableNotFoundException("Specified table was not found")
+  private def findCachedTableObject(dynamoDB: DynamoDB): Table = {
+    def resolveTable(): Table = {
+      dynamoDB.table(_nameInDatabase) match {
+        case Some(table) => table
+        case None => throw new TableNotFoundException("Specified table was not found")
+      }
+    }
+
+    this.synchronized {
+      _cachedTableReference match {
+        case None => this._cachedTableReference = Some(resolveTable()); this._cachedTableReference.get
+        case Some(table) => table
+      }
     }
   }
 
