@@ -1,9 +1,7 @@
 package com.github.mkorman9
 
 import awscala.dynamodbv2._
-import com.amazonaws.services.dynamodbv2.model.Condition
-
-import DynamoDSL.QueryParts
+import com.github.mkorman9.DynamoDSL.QueryParts
 
 /**
   * Marker used for classes defining operators for queries DSL

@@ -1,10 +1,10 @@
 package com.github.mkorman9
 
 import java.nio.ByteBuffer
-import java.time.{LocalDateTime, ZonedDateTime}
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDateTime, ZonedDateTime}
 
-import awscala.dynamodbv2.{Attribute, AttributeValue, Item}
+import awscala.dynamodbv2.{AttributeValue, Item}
 
 import scala.collection.JavaConverters._
 

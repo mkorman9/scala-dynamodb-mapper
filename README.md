@@ -1,11 +1,11 @@
 ![build status](https://travis-ci.org/mkorman9/scala-dynamodb-mapper.svg?branch=master)
 
 ## scala-dynamodb-mapper
-Simple framework for mapping between Scala case classes and Amazon DynamoDB items. Wrapper around [awscala](https://github.com/seratch/AWScala)
+Simple framework for mapping between Scala classes and Amazon DynamoDB tables. Wrapper around [awscala](https://github.com/seratch/AWScala)
 
 ## What does it do?
-* Provides method for putting case class objects straight into DynamoDB
-* Provides method for retrieving sequence of case class objects from DynamoDB
+* Provides method for putting objects straight into DynamoDB
+* Provides method for retrieving sequence of objects from DynamoDB
 * Provides built-it mapping for basic Scala types and Java DateTime API
 * Allows you to write mappers for your own classes
 * Allows you to declare attributes as non-required and map them to Option[T]
@@ -13,7 +13,7 @@ Simple framework for mapping between Scala case classes and Amazon DynamoDB item
 * Provides simple DSL for queries
 
 ## What it doesn't do?
-* Doesn't allow you to project query and get only selected attributes. It's only meant to be a mapper between database and a case class
+* Doesn't allow you to project query and get only selected attributes. It's only meant to be a mapper between database and a class
 * Doesn't provide a query cache
 
 ## How to install it?
