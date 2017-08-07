@@ -38,6 +38,10 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
       )
     )
 
+    connection.createTable("Parrot",
+      ("id", ScalarAttributeType.N)
+    )
+
     val snakesTable = Table(
       name = "Snake",
       hashPK = "id",
@@ -162,5 +166,15 @@ class DynamoIntegrationTest extends FunSuite with Matchers with BeforeAndAfterAl
     )
 
     whiteAkensSnakesFromDb.toSet should be (whiteAkensSnakes.toSet)
+  }
+
+  test("Mapper should be able to serializer and deserialize JSON objects") {
+    val parrotInfo = ParrotInfo("Cacado", 20)
+    val parrotToSave = ParrotDataModel(1L, parrotInfo)
+
+    ParrotsMapping.put(parrotToSave)
+
+    val retrievedParrot = ParrotsMapping.get(1L).get
+    parrotToSave should be (retrievedParrot)
   }
 }
