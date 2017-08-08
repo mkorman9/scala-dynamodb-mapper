@@ -54,7 +54,7 @@ Then you create a data model, for example a Cat:
 case class Cat(name: String,                 // Name of a cat
                roleName: String,             // It's role in the group
                mousesConsumed: Option[Int],  // Optional info about total number of mouses consumed
-               birthDate: LocalDateTime,          // Birth date
+               birthDate: LocalDateTime,     // Birth date
                furColors: Seq[String])       // Sequence of string describing colors of cat's fur
 ```
 
