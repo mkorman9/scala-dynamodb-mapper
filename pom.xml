@@ -38,6 +38,7 @@
         <scala.version>2.11.8</scala.version>
 
         <awscala.version>0.6.0</awscala.version>
+        <jackson.version>2.9.0</jackson.version>
         <scalatest.version>3.0.1</scalatest.version>
         <scalamock.version>3.6.0</scalamock.version>
     </properties>
@@ -52,6 +53,11 @@
             <groupId>com.github.seratch</groupId>
             <artifactId>awscala_2.11</artifactId>
             <version>${awscala.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-scala_2.11</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
         <dependency>

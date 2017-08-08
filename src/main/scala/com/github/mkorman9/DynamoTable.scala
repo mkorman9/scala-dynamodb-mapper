@@ -126,19 +126,19 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
   /**
     * Returns a result of the database query built from specified keyConditions
     *
-    * @param queryParts Sequence of conditions to build the query. Sequence must contain a reference to the hash key
+    * @param keyConditions Sequence of conditions to build the query. Sequence must contain a reference to the hash key
     * @param dynamoDB Connection to database
     * @param c case class ClassTag
     * @throws HashKeyNotFoundException When hash key is not returned in query result
     * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
-  def query(queryParts: QueryParts)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
+  def query(keyConditions: QueryParts)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     mapQueryResultsListToCaseClass(
       hashKey = getHashKey(),
       sortKey = getSortKey(),
       nonKeyAttributes = getNonKeyAttributes(),
-      queryResult = findCachedTableObject(dynamoDB).query(queryParts),
+      queryResult = findCachedTableObject(dynamoDB).query(keyConditions),
       dynamoDB = dynamoDB,
       c = c
     )
@@ -148,14 +148,14 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * Returns a result of the database query built from specified keyConditions. Query is performed in secondary index specified as parameter
     *
     * @param index Secondary index to perform query on
-    * @param queryParts Sequence of conditions to build the query. Sequence must contain a reference to the hash key
+    * @param keyConditions Sequence of conditions to build the query. Sequence must contain a reference to the hash key
     * @param dynamoDB Connection to database
     * @param c case class ClassTag
     * @throws HashKeyNotFoundException When hash key is not returned in query result
     * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
-  def query(index: DynamoSecondaryIndex[_], queryParts: QueryParts)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
+  def query(index: DynamoSecondaryIndex[_], keyConditions: QueryParts)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     def retrieveLocalSecondaryIndex(table: Table): LocalSecondaryIndex = {
       val indexesList = dynamoDB.describe(table).get.getLocalSecondaryIndexes
       if (indexesList == null)
@@ -195,7 +195,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
       hashKey = indexHashKey,
       sortKey = indexSortKey,
       nonKeyAttributes = nonKeyAttributes,
-      queryResult = findCachedTableObject(dynamoDB).queryWithIndex(secondaryIndex, queryParts),
+      queryResult = findCachedTableObject(dynamoDB).queryWithIndex(secondaryIndex, keyConditions),
       dynamoDB = dynamoDB,
       c = c
     )
@@ -204,7 +204,7 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
   /**
     * Returns a result of the database table scan built from specified keyConditions
     *
-    * @param queryParts Sequence of conditions to build the query
+    * @param keyConditions Sequence of conditions to build the query
     * @param limit Maximum counts of items returned
     * @param segment Number of segment to retrieve
     * @param totalSegments Total number of segments
@@ -214,10 +214,10 @@ abstract class DynamoTable[C](nameInDatabase: String) extends DynamoDatabaseEnti
     * @throws SortKeyNotFoundException When sort key is defined but not returned in query result
     * @throws AttributeNotFoundException When attribute is marked as required but not returned in query result
     */
-  def scan(queryParts: QueryParts, limit: Int = 1000, segment: Int = 0, totalSegments: Int = 1)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
+  def scan(keyConditions: QueryParts, limit: Int = 1000, segment: Int = 0, totalSegments: Int = 1)(implicit dynamoDB: DynamoDB, c: ClassTag[C]): Seq[C] = {
     def performTableScan(): Seq[Item] = {
       findCachedTableObject(dynamoDB).scan(
-        filter = queryParts,
+        filter = keyConditions,
         select = Select.ALL_ATTRIBUTES,
         attributesToGet = Nil,
         limit = limit,

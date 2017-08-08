@@ -5,6 +5,9 @@ import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZonedDateTime}
 
 import awscala.dynamodbv2.{AttributeValue, Item}
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 
 import scala.collection.JavaConverters._
 
@@ -359,4 +362,27 @@ case class DynamoZonedDateTime(fieldName: String, required: Boolean = true) exte
   override def convertToDatabaseReadableValue(value: Any): Any = DateTimeFormat.format(value.asInstanceOf[ZonedDateTime])
 
   override def convertToRealValue(value: Any): ZonedDateTime = ZonedDateTime.parse(value.toString, DateTimeFormat)
+}
+
+/**
+  * Provides JSON conversion for any object
+  *
+  * @param fieldName Name of attribute. Must match the name of case class member!
+  * @param required  Is value required to be returned in every query. Set to false only if corresponding case class member is of type Option[_]
+  *
+  */
+case class DynamoJSON[T: Manifest](fieldName: String, required: Boolean = true) extends DynamoAttribute[T, String] {
+  val ObjectMapper = new ObjectMapper() with ScalaObjectMapper
+  ObjectMapper.registerModule(DefaultScalaModule)
+
+  override val name: String = fieldName
+  override val requiredValue: Boolean = required
+
+  override def extractValueFromAttributeValue(attributeValue: AttributeValue): String = attributeValue.getS
+
+  override def convertToDatabaseReadableValue(value: Any): Any = ObjectMapper.writeValueAsString(value)
+
+  override def convertToRealValue(value: Any): T = createObjectFromJson(value.asInstanceOf[String])
+
+  private def createObjectFromJson(json: String): T = ObjectMapper.readValue[T](json)
 }
