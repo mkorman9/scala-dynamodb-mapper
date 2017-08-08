@@ -101,6 +101,19 @@ val huntersWithOver4MousesConsumed: Seq[Cat] = Cats.query(CatsByMousesConsumed,
 )
 ```
 
+It is also possible to serialize any nested class to JSON
+```scala
+case class Address(street: String, zipCode: String)
+case class Person(name: String, address: Address)
+
+object People extends DynamoTable[Person]("People") {
+  val name = DynamoString("name")
+  val address = DynamoJSON[Address]("address")
+  
+  override val _keys = (name, DynamoEmptyAttribute)
+}
+```
+
 ## How to contribute?
 
 * Identify missing feature or bug to fix

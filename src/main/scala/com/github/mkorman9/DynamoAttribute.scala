@@ -384,6 +384,5 @@ case class DynamoJSON[T: Manifest](fieldName: String, required: Boolean = true) 
 
   override def convertToRealValue(value: Any): T = createObjectFromJson(value.asInstanceOf[String])
 
-  private def createObjectFromJson(json: String): T =
-    ObjectMapper.readValue[T](json)
+  private def createObjectFromJson(json: String): T = ObjectMapper.readValue[T](json)
 }
