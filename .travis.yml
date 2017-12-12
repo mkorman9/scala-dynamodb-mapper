@@ -17,8 +17,6 @@ cache:
     - $HOME/.m2
 
 before_install:
-  - echo ${encrypted_9b6d7f75eb61_key:0:2}/${encrypted_9b6d7f75eb61_key:2}
-  - echo ${encrypted_9b6d7f75eb61_iv:0:2}/${encrypted_9b6d7f75eb61_iv:2}
   - export VERSION_BASE=0.7
   - if [[ "${TRAVIS_BRANCH}" != "master" ]]; then export SNAPSHOT_VER='-SNAPSHOT'; fi
   - if [ "${TRAVIS_BRANCH}" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then export MVN_CMD='deploy'; else export MVN_CMD='package'; fi
